@@ -1,0 +1,256 @@
+/* Theme Configurations for Linktree Vendor Profiles */
+
+.vendor-profile-wrapper {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2.5rem 1rem;
+  transition: background 0.5s ease, color 0.3s ease;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Background Presets */
+.theme-sunset-glow {
+  background: linear-gradient(135deg, #f53f85 0%, #ff7e5f 50%, #feb47b 100%);
+  color: #ffffff;
+}
+
+.theme-cosmic-night {
+  background: linear-gradient(135deg, #090a0f 0%, #121829 50%, #1a2542 100%);
+  color: #f1f5f9;
+}
+
+.theme-emerald-forest {
+  background: linear-gradient(135deg, #053b29 0%, #0d5c3a 50%, #1bb978 100%);
+  color: #ffffff;
+}
+
+.theme-electric-blue {
+  background: linear-gradient(135deg, #0d1b2a 0%, #1b263b 40%, #415a77 80%, #00b4d8 100%);
+  color: #e0e1dd;
+}
+
+.theme-aurora {
+  background: linear-gradient(135deg, #0f172a 0%, #312e81 30%, #581c87 70%, #1e1b4b 100%);
+  color: #f8fafc;
+}
+
+.theme-royal-velvet {
+  background: linear-gradient(135deg, #2d0b3d 0%, #4c1d95 50%, #8b5cf6 100%);
+  color: #f5f3ff;
+}
+
+.theme-light-glass {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #0f172a;
+}
+
+.theme-dark-glass {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #f8fafc;
+}
+
+/* Theme-specific profile card modifications */
+.vendor-profile-wrapper.theme-sunset-glow .profile-card {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 32px 0 rgba(245, 63, 133, 0.3);
+  backdrop-filter: blur(12px);
+}
+
+.vendor-profile-wrapper.theme-cosmic-night .profile-card {
+  background: rgba(18, 24, 41, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 20px rgba(99, 102, 241, 0.15);
+  backdrop-filter: blur(16px);
+}
+
+.vendor-profile-wrapper.theme-emerald-forest .profile-card {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(13, 92, 58, 0.3);
+  backdrop-filter: blur(12px);
+}
+
+.vendor-profile-wrapper.theme-electric-blue .profile-card {
+  background: rgba(27, 38, 59, 0.75);
+  border: 1px solid rgba(0, 180, 216, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), 0 0 15px rgba(0, 180, 216, 0.2);
+  backdrop-filter: blur(14px);
+}
+
+.vendor-profile-wrapper.theme-aurora .profile-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(139, 92, 246, 0.1);
+  backdrop-filter: blur(18px);
+}
+
+.vendor-profile-wrapper.theme-royal-velvet .profile-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(76, 29, 149, 0.4);
+  backdrop-filter: blur(15px);
+}
+
+.vendor-profile-wrapper.theme-light-glass .profile-card {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 32px 0 rgba(148, 163, 184, 0.2);
+  backdrop-filter: blur(10px);
+  color: #1e293b;
+}
+
+.vendor-profile-wrapper.theme-dark-glass .profile-card {
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(14px);
+}
+
+/* Custom Dynamic Styles when Custom Colors are Used */
+.custom-theme-wrapper {
+  color: var(--theme-text-color, #ffffff);
+}
+
+.custom-theme-wrapper .profile-card {
+  background: var(--theme-card-bg, rgba(255, 255, 255, 0.1));
+  border: 1px solid var(--theme-card-border, rgba(255, 255, 255, 0.15));
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+}
+
+/* Tab/Link Styles depending on theme tone */
+.vendor-profile-wrapper.theme-light-glass .vendor-link-tab {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  color: #334155;
+  box-shadow: 0 2px 8px rgba(148, 163, 184, 0.08);
+}
+.vendor-profile-wrapper.theme-light-glass .vendor-link-tab:hover {
+  background: #ffffff;
+  border-color: #6366f1;
+  color: #6366f1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.vendor-profile-wrapper:not(.theme-light-glass) .vendor-link-tab {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: inherit;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.vendor-profile-wrapper:not(.theme-light-glass) .vendor-link-tab:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(255, 255, 255, 0.15);
+}
+
+/* Admin Custom Theme Controls Preview */
+.theme-preview-card {
+  width: 100%;
+  max-width: 340px;
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin: 1rem auto;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
+}
+
+/* ============================================
+   ENHANCED PROFILE CARD INTERACTIONS
+   ============================================ */
+
+/* Smooth floating animation for the profile card */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Avatar hover zoom */
+.profile-avatar-container:hover .profile-avatar {
+  transform: scale(1.06);
+}
+.profile-avatar {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Link tab stagger animation on page load */
+.vendor-links-list .vendor-link-tab:nth-child(1) { animation-delay: 0.05s; }
+.vendor-links-list .vendor-link-tab:nth-child(2) { animation-delay: 0.1s; }
+.vendor-links-list .vendor-link-tab:nth-child(3) { animation-delay: 0.15s; }
+.vendor-links-list .vendor-link-tab:nth-child(4) { animation-delay: 0.2s; }
+.vendor-links-list .vendor-link-tab:nth-child(5) { animation-delay: 0.25s; }
+.vendor-links-list .vendor-link-tab:nth-child(6) { animation-delay: 0.3s; }
+.vendor-links-list .vendor-link-tab {
+  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+/* Active press state for links */
+.vendor-link-tab:active {
+  transform: scale(0.97) translateY(0) !important;
+}
+
+/* Glowing verified badge pulse */
+.verified-icon {
+  animation: verifyPulse 3s ease-in-out infinite;
+}
+@keyframes verifyPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+  50%       { box-shadow: 0 0 0 5px rgba(59, 130, 246, 0); }
+}
+
+/* Gradient company badge subtle text shimmer */
+.company-badge {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.12) 100%
+  );
+  background-size: 200% auto;
+  animation: badgeShimmer 4s linear infinite;
+  transition: letter-spacing 0.3s ease;
+}
+.company-badge:hover {
+  letter-spacing: 0.14em;
+}
+@keyframes badgeShimmer {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+/* Profile card depth shadow animation on first render */
+@keyframes cardDepth {
+  from { box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+  to   { /* inherits theme-specific box-shadow */ }
+}
+
+/* Mobile responsive buy card banner */
+@media (max-width: 420px) {
+  .buy-card-banner h4 {
+    font-size: 0.95rem;
+  }
+  .buy-card-banner p {
+    font-size: 0.75rem;
+  }
+  .buy-card-btn {
+    font-size: 0.8rem;
+    padding: 0.4rem 1rem;
+  }
+  .profile-avatar-container {
+    width: 90px;
+    height: 90px;
+  }
+}
