@@ -3,6 +3,11 @@ import { AppProvider, useApp } from './context/AppContext';
 import { VendorProfile } from './pages/VendorProfile';
 import { BuyCard } from './pages/BuyCard';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { LandingPage } from './pages/LandingPage';
+import { IndividualLogin } from './pages/IndividualLogin';
+import { CompanyLogin } from './pages/CompanyLogin';
+import { IndividualDashboard } from './pages/IndividualDashboard';
+import { CompanyDashboard } from './pages/CompanyDashboard';
 import './ThemeStyles.css';
 
 const AppRouter: React.FC = () => {
@@ -24,19 +29,41 @@ const AppRouter: React.FC = () => {
 
   const path = getPath();
 
-  // ── Route: root or empty hash → AdminDashboard ─────────────────────────────
+  // ── Route: root or empty hash → Landing Page ──────────────────────────────
   if (!path || path === 'index.html') {
-    return <AdminDashboard />;
+    return <LandingPage />;
   }
 
-  // ── Route: #/admin → AdminDashboard ───────────────────────────────────────
+  // ── Route: #/admin → AdminDashboard ──────────────────────────────────────
   if (path === 'admin') {
     return <AdminDashboard />;
   }
 
-  // ── Route: #/buy → BuyCard ────────────────────────────────────────────────
+  // ── Route: #/buy → BuyCard ───────────────────────────────────────────────
   if (path === 'buy') {
     return <BuyCard />;
+  }
+
+  // ── Route: #/login → IndividualLogin ─────────────────────────────────────
+  if (path === 'login') {
+    return <IndividualLogin />;
+  }
+
+  // ── Route: #/company-login → CompanyLogin ────────────────────────────────
+  if (path === 'company-login') {
+    return <CompanyLogin />;
+  }
+
+  // ── Route: #/dashboard/{username} → IndividualDashboard ──────────────────
+  if (path.startsWith('dashboard/')) {
+    const vendorUsername = path.replace('dashboard/', '');
+    return <IndividualDashboard vendorUsername={vendorUsername} />;
+  }
+
+  // ── Route: #/company/{name} → CompanyDashboard ───────────────────────────
+  if (path.startsWith('company/')) {
+    const companyUsername = path.replace('company/', '');
+    return <CompanyDashboard companyUsername={companyUsername} />;
   }
 
   // ── Route: #/{username} → VendorProfile ──────────────────────────────────
@@ -65,8 +92,8 @@ const AppRouter: React.FC = () => {
           <p style={{ opacity: 0.75, marginBottom: '2rem', fontSize: '0.9rem' }}>
             No profile found for <strong>@{path}</strong>. It may have been removed or the link is incorrect.
           </p>
-          <a href="#/admin" className="submit-btn" style={{ textDecoration: 'none' }}>
-            Go to Admin Dashboard
+          <a href="#/" className="submit-btn" style={{ textDecoration: 'none' }}>
+            Go to Home
           </a>
         </div>
       </div>

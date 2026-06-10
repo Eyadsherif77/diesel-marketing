@@ -1,7 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import type { Vendor, Tab, ThemeConfig, CardOrder } from '../context/AppContext';
 import * as Icons from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import {
+  createCompanyAccount,
+  createIndividualAccount,
+  fetchAllCompanies,
+  fetchIndividualAccounts,
+} from '../lib/auth';
 
 const DYNAMIC_ICONS = [
   'Link', 'Star', 'FileText', 'Calendar', 'Briefcase', 'Award', 'ShoppingBag', 
@@ -40,7 +47,7 @@ export const AdminDashboard: React.FC = () => {
   const [loginError, setLoginError] = useState('');
 
   // Dashboard state
-  const [activeTab, setActiveTab] = useState<'vendors' | 'orders'>('vendors');
+  const [activeTab, setActiveTab] = useState<'vendors' | 'orders' | 'accounts'>('vendors');
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [activeFormTab, setActiveFormTab] = useState<'info' | 'theme' | 'tabs'>('info');
@@ -63,6 +70,42 @@ export const AdminDashboard: React.FC = () => {
   // Create Vendor Fields
   const [newUsername, setNewUsername] = useState('');
   const [newName, setNewName] = useState('');
+
+  // Vendor additional fields
+  const [vendorPhone, setVendorPhone] = useState('');
+  const [vendorEmail, setVendorEmail] = useState('');
+  const [vendorWebsite, setVendorWebsite] = useState('');
+
+  // Company & Individual Account Management
+  const [companies, setCompanies] = useState<{ id: string; company_name: string; username: string; created_at: string }[]>([]);
+  const [individualAccounts, setIndividualAccounts] = useState<{ id: string; username: string; vendor_username: string; created_at: string }[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(false);
+
+  // Create Company Form
+  const [newCompanyName, setNewCompanyName] = useState('');
+  const [newCompanyUsername, setNewCompanyUsername] = useState('');
+  const [newCompanyPassword, setNewCompanyPassword] = useState('');
+
+  // Create Individual Account Form
+  const [newIndivUsername, setNewIndivUsername] = useState('');
+  const [newIndivVendor, setNewIndivVendor] = useState('');
+  const [newIndivPassword, setNewIndivPassword] = useState('');
+
+  // Assign Vendor to Company Form
+  const [assignVendorUsername, setAssignVendorUsername] = useState('');
+  const [assignCompanyId, setAssignCompanyId] = useState('');
+
+  const loadAccounts = async () => {
+    setAccountsLoading(true);
+    const [comps, indivs] = await Promise.all([fetchAllCompanies(), fetchIndividualAccounts()]);
+    setCompanies(comps);
+    setIndividualAccounts(indivs);
+    setAccountsLoading(false);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'accounts') loadAccounts();
+  }, [activeTab]);
 
   // Notification State
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -101,8 +144,11 @@ export const AdminDashboard: React.FC = () => {
     setVendorCompanyName(vendor.companyName);
     setVendorPdfUrl(vendor.portfolioPdfUrl);
     setVendorPdfName(vendor.portfolioPdfName);
-    setVendorTheme({ ...vendor.theme }); // Clone to prevent direct mutations
+    setVendorTheme({ ...vendor.theme });
     setVendorTabs([...vendor.tabs]);
+    setVendorPhone(vendor.phone_number ?? '');
+    setVendorEmail(vendor.email ?? '');
+    setVendorWebsite(vendor.website ?? '');
     setActiveFormTab('info');
   };
 
@@ -138,7 +184,10 @@ export const AdminDashboard: React.FC = () => {
       theme: vendorTheme,
       tabs: vendorTabs,
       portfolioPdfUrl: vendorPdfUrl,
-      portfolioPdfName: vendorPdfName
+      portfolioPdfName: vendorPdfName,
+      phone_number: vendorPhone,
+      email: vendorEmail,
+      website: vendorWebsite,
     };
 
     await updateVendor(editingVendor.username, updatedVendor);
@@ -416,6 +465,17 @@ export const AdminDashboard: React.FC = () => {
               </span>
             )}
           </button>
+
+          <button 
+            className={`admin-nav-item ${activeTab === 'accounts' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('accounts');
+              setIsMobileMenuOpen(false);
+            }}
+          >
+            <Icons.KeyRound size={18} />
+            <span>Account Management</span>
+          </button>
         </div>
 
         <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border-admin)', paddingTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-admin-secondary)' }}>
@@ -648,8 +708,176 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
+        {/* ─── Accounts Management Tab ──────────────────────────────────────── */}
+        {activeTab === 'accounts' && (
+          <div>
+            <div className="admin-header" style={{ marginBottom: '1.5rem' }}>
+              <div>
+                <h2>Account Management</h2>
+                <p className="admin-title-desc">Create company & individual accounts. Assign vendors to companies.</p>
+              </div>
+            </div>
+
+            {accountsLoading ? (
+              <div className="admin-card" style={{ textAlign: 'center', padding: '3rem' }}>
+                <Icons.Loader size={32} style={{ animation: 'spin 1s linear infinite', opacity: 0.5 }} />
+              </div>
+            ) : (
+              <div className="admin-grid-2">
+
+                {/* Create Company */}
+                <div className="admin-card">
+                  <h3 style={{ marginBottom: '1.25rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Icons.Building2 size={18} color="#10b981" />
+                    Create Company Account
+                  </h3>
+                  <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    const id = await createCompanyAccount(newCompanyName, newCompanyUsername, newCompanyPassword);
+                    if (id) {
+                      triggerAlert('success', `Company @${newCompanyUsername} created!`);
+                      setNewCompanyName(''); setNewCompanyUsername(''); setNewCompanyPassword('');
+                      loadAccounts();
+                    } else {
+                      triggerAlert('error', 'Failed to create company. Username may already exist.');
+                    }
+                  }}>
+                    <div className="input-group">
+                      <label className="input-label">Company Name</label>
+                      <input type="text" className="input-field" placeholder="Acme Corp" value={newCompanyName} onChange={e => setNewCompanyName(e.target.value)} required />
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Username</label>
+                      <input type="text" className="input-field" placeholder="acme-corp" value={newCompanyUsername} onChange={e => setNewCompanyUsername(e.target.value)} required />
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Password</label>
+                      <input type="password" className="input-field" placeholder="••••••••" value={newCompanyPassword} onChange={e => setNewCompanyPassword(e.target.value)} required />
+                    </div>
+                    <button type="submit" className="admin-btn" style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #059669, #10b981)' }}>
+                      <Icons.Plus size={16} /> Create Company
+                    </button>
+                  </form>
+
+                  {companies.length > 0 && (
+                    <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border-admin)', paddingTop: '1rem' }}>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-admin-secondary)', marginBottom: '0.75rem' }}>Existing Companies ({companies.length})</p>
+                      {companies.map(c => (
+                        <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '0.85rem' }}>
+                          <div>
+                            <span style={{ color: '#f1f5f9', fontWeight: 600 }}>{c.company_name}</span>
+                            <span style={{ color: '#475569', marginLeft: '0.5rem' }}>@{c.username}</span>
+                          </div>
+                          <span style={{ fontSize: '0.72rem', color: '#475569' }}>{new Date(c.created_at).toLocaleDateString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Create Individual Account */}
+                <div className="admin-card">
+                  <h3 style={{ marginBottom: '1.25rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Icons.User size={18} color="#818cf8" />
+                    Create Individual Account
+                  </h3>
+                  <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    const ok = await createIndividualAccount(newIndivUsername, newIndivVendor, newIndivPassword);
+                    if (ok) {
+                      triggerAlert('success', `Individual account @${newIndivUsername} created for @${newIndivVendor}!`);
+                      setNewIndivUsername(''); setNewIndivVendor(''); setNewIndivPassword('');
+                      loadAccounts();
+                    } else {
+                      triggerAlert('error', 'Failed to create account. Username or vendor may already exist.');
+                    }
+                  }}>
+                    <div className="input-group">
+                      <label className="input-label">Account Username</label>
+                      <input type="text" className="input-field" placeholder="john-doe-login" value={newIndivUsername} onChange={e => setNewIndivUsername(e.target.value)} required />
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Linked Vendor Username</label>
+                      <select className="input-field" value={newIndivVendor} onChange={e => setNewIndivVendor(e.target.value)} required>
+                        <option value="">— Select Vendor —</option>
+                        {vendors.map(v => <option key={v.username} value={v.username}>{v.name} (@{v.username})</option>)}
+                      </select>
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Password</label>
+                      <input type="password" className="input-field" placeholder="••••••••" value={newIndivPassword} onChange={e => setNewIndivPassword(e.target.value)} required />
+                    </div>
+                    <button type="submit" className="admin-btn" style={{ width: '100%', justifyContent: 'center' }}>
+                      <Icons.Plus size={16} /> Create Account
+                    </button>
+                  </form>
+
+                  {individualAccounts.length > 0 && (
+                    <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border-admin)', paddingTop: '1rem' }}>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-admin-secondary)', marginBottom: '0.75rem' }}>Individual Accounts ({individualAccounts.length})</p>
+                      {individualAccounts.map(a => (
+                        <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '0.85rem' }}>
+                          <div>
+                            <span style={{ color: '#f1f5f9', fontWeight: 600 }}>@{a.username}</span>
+                            <span style={{ color: '#818cf8', marginLeft: '0.5rem', fontSize: '0.78rem' }}>→ @{a.vendor_username}</span>
+                          </div>
+                          <span style={{ fontSize: '0.72rem', color: '#475569' }}>{new Date(a.created_at).toLocaleDateString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Assign Vendor to Company */}
+                <div className="admin-card" style={{ gridColumn: '1 / -1' }}>
+                  <h3 style={{ marginBottom: '1.25rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Icons.Link size={18} color="#f59e0b" />
+                    Assign Vendor to Company
+                  </h3>
+                  <p style={{ color: 'var(--text-admin-secondary)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+                    Only admins can assign/unassign vendors. Companies cannot modify their own vendor roster.
+                  </p>
+                  <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    const { error } = await supabase
+                      .from('vendors')
+                      .update({ company_id: assignCompanyId || null })
+                      .eq('username', assignVendorUsername);
+                    if (!error) {
+                      triggerAlert('success', `Vendor @${assignVendorUsername} ${assignCompanyId ? 'assigned to company' : 'unassigned from company'}!`);
+                      setAssignVendorUsername(''); setAssignCompanyId('');
+                    } else {
+                      triggerAlert('error', 'Failed to assign vendor: ' + error.message);
+                    }
+                  }} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '1rem', alignItems: 'flex-end' }}>
+                    <div className="input-group" style={{ margin: 0 }}>
+                      <label className="input-label">Select Vendor</label>
+                      <select className="input-field" value={assignVendorUsername} onChange={e => setAssignVendorUsername(e.target.value)} required>
+                        <option value="">— Select Vendor —</option>
+                        {vendors.map(v => <option key={v.username} value={v.username}>{v.name} (@{v.username})</option>)}
+                      </select>
+                    </div>
+                    <div className="input-group" style={{ margin: 0 }}>
+                      <label className="input-label">Assign to Company (leave blank to unassign)</label>
+                      <select className="input-field" value={assignCompanyId} onChange={e => setAssignCompanyId(e.target.value)}>
+                        <option value="">— No Company (Individual) —</option>
+                        {companies.map(c => <option key={c.id} value={c.id}>{c.company_name} (@{c.username})</option>)}
+                      </select>
+                    </div>
+                    <button type="submit" className="admin-btn" style={{ whiteSpace: 'nowrap' }}>
+                      <Icons.Save size={16} /> Apply Assignment
+                    </button>
+                  </form>
+                </div>
+
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Modal: Add New Vendor */}
         {isCreateModalOpen && (
+
           <div className="modal-overlay">
             <div className="modal-content">
               <div className="modal-header">
@@ -862,6 +1090,40 @@ export const AdminDashboard: React.FC = () => {
                           className="input-field"
                         />
                       </div>
+                    </div>
+
+                    <div className="admin-grid-2" style={{ marginTop: '1.25rem' }}>
+                      <div className="input-group">
+                        <label className="input-label">Phone Number</label>
+                        <input 
+                          type="text" 
+                          placeholder="E.g., +15550100"
+                          value={vendorPhone}
+                          onChange={(e) => setVendorPhone(e.target.value)}
+                          className="input-field"
+                        />
+                      </div>
+                      <div className="input-group">
+                        <label className="input-label">Email Address</label>
+                        <input 
+                          type="email" 
+                          placeholder="E.g., alex@company.com"
+                          value={vendorEmail}
+                          onChange={(e) => setVendorEmail(e.target.value)}
+                          className="input-field"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="input-group">
+                      <label className="input-label">Website URL</label>
+                      <input 
+                        type="text" 
+                        placeholder="E.g., https://company.com"
+                        value={vendorWebsite}
+                        onChange={(e) => setVendorWebsite(e.target.value)}
+                        className="input-field"
+                      />
                     </div>
                   </div>
                 )}

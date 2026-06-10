@@ -959,3 +959,71 @@ select option {
     font-size: 0.9rem;
   }
 }
+
+/* ============================================
+   PROFILE ACTION BUTTONS (VCF + Phone)
+   ============================================ */
+.profile-action-btns {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.profile-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.4rem;
+  border-radius: 50px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-vcf-btn {
+  background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.15));
+  border: 1px solid rgba(99,102,241,0.35);
+  color: #a5b4fc;
+}
+.profile-vcf-btn:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,0.35), rgba(139,92,246,0.3));
+  border-color: rgba(99,102,241,0.6);
+  color: #c4b5fd;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(99,102,241,0.3);
+}
+.profile-vcf-btn:active { transform: scale(0.97); }
+
+.profile-phone-btn {
+  background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(6,182,212,0.15));
+  border: 1px solid rgba(16,185,129,0.35);
+  color: #6ee7b7;
+}
+.profile-phone-btn:hover {
+  background: linear-gradient(135deg, rgba(16,185,129,0.35), rgba(6,182,212,0.3));
+  border-color: rgba(16,185,129,0.6);
+  color: #a7f3d0;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16,185,129,0.3);
+}
+.profile-phone-btn:active { transform: scale(0.97); }
+
+/* Light glass theme overrides for action buttons */
+.vendor-profile-wrapper.theme-light-glass .profile-vcf-btn {
+  background: rgba(99,102,241,0.1);
+  border-color: rgba(99,102,241,0.3);
+  color: #4f46e5;
+}
+.vendor-profile-wrapper.theme-light-glass .profile-phone-btn {
+  background: rgba(16,185,129,0.1);
+  border-color: rgba(16,185,129,0.3);
+  color: #059669;
+}
+

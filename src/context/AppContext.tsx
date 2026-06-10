@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 
 export interface Tab {
   id: string;
-  type: 'whatsapp' | 'instagram' | 'facebook' | 'mail' | 'tiktok' | 'maps' | 'linkedin' | 'website' | 'telegram' | 'custom';
+  type: 'whatsapp' | 'instagram' | 'facebook' | 'mail' | 'tiktok' | 'maps' | 'linkedin' | 'website' | 'telegram' | 'phone' | 'custom';
   label: string;
   value: string;
   iconName: string;
@@ -30,6 +30,12 @@ export interface Vendor {
   tabs: Tab[];
   portfolioPdfUrl: string;
   portfolioPdfName: string;
+  // Contact fields
+  phone_number?: string;
+  email?: string;
+  website?: string;
+  // Company relationship
+  company_id?: string;
 }
 
 export interface CardOrder {
@@ -70,6 +76,10 @@ function rowToVendor(row: any): Vendor {
     tabs: row.tabs as Tab[],
     portfolioPdfUrl: row.portfolio_pdf_url,
     portfolioPdfName: row.portfolio_pdf_name,
+    phone_number: row.phone_number ?? '',
+    email: row.email ?? '',
+    website: row.website ?? '',
+    company_id: row.company_id ?? undefined,
   };
 }
 
@@ -85,6 +95,10 @@ function vendorToRow(vendor: Vendor) {
     tabs: vendor.tabs,
     portfolio_pdf_url: vendor.portfolioPdfUrl,
     portfolio_pdf_name: vendor.portfolioPdfName,
+    phone_number: vendor.phone_number ?? null,
+    email: vendor.email ?? null,
+    website: vendor.website ?? null,
+    company_id: vendor.company_id ?? null,
   };
 }
 
