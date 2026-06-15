@@ -25,7 +25,7 @@ export const IndividualLogin: React.FC = () => {
 
     // Store session in sessionStorage
     sessionStorage.setItem(
-      'diesel_individual_session',
+      'devtech_individual_session',
       JSON.stringify({ username: username.trim(), vendorUsername: result.vendorUsername })
     );
     window.location.hash = `#/dashboard/${result.vendorUsername}`;

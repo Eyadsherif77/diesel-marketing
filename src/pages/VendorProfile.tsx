@@ -14,7 +14,7 @@ const DynamicIcon = ({ name, size = 20 }: { name: string; size?: number }) => {
 };
 
 // ─── URL builder per tab type ──────────────────────────────────────────────────
-export const getTabUrl = (type: string, value: string) => {
+const getTabUrl = (type: string, value: string) => {
   const cleanValue = value.trim();
   if (
     cleanValue.startsWith('http://') ||
@@ -42,6 +42,9 @@ export const getTabUrl = (type: string, value: string) => {
       return `https://maps.google.com/?q=${encodeURIComponent(cleanValue)}`;
     case 'phone':
       return `tel:${cleanValue.replace(/\s/g, '')}`;
+    case 'instapay':
+      // Value is normally the full InstaPay link
+      return cleanValue.includes('.') ? `https://${cleanValue}` : cleanValue;
     case 'custom':
       // For custom tabs, treat value as a full URL if it has a dot; otherwise return as-is
       if (!cleanValue) return '#';
@@ -66,6 +69,7 @@ const getTabDisplay = (type: string, value: string): string => {
     case 'phone': return v;
     case 'mail': return v;
     case 'facebook': return v;
+    case 'instapay': return 'InstaPay Transfer';
     case 'linkedin':
       if (v.includes('linkedin.com/in/')) return `@${v.split('linkedin.com/in/')[1].replace(/\/$/, '')}`;
       return `@${v.replace('@', '')}`;
@@ -99,6 +103,9 @@ interface VendorProfileProps {
 export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
   const { vendors } = useApp();
   const vendor = vendors.find(v => v.username.toLowerCase() === username.toLowerCase());
+  if (vendor) {
+    console.log('[VendorProfile] Vendor language:', vendor.language);
+  }
   const trackedRef = useRef(false);
 
   // ─── Track profile view / QR scan once per mount ─────────────────────────
@@ -130,6 +137,39 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
           <a href="#/buy" className="submit-btn" style={{ textDecoration: 'none' }}>
             <Icons.CreditCard size={18} />
             Order a Card &amp; Register
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  const subExpiry = vendor.subscription_end_date;
+  const isExpired = (() => {
+    if (!subExpiry) return false;
+    const exp = new Date(subExpiry);
+    exp.setHours(23, 59, 59, 999);
+    return exp < new Date();
+  })();
+
+  if (isExpired) {
+    const isArabic = vendor.language === 'ar';
+    return (
+      <div className="buy-page-container">
+        <div className="buy-card-box animate-fade-in" style={{ textAlign: 'center', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)' }}>
+          <div className="success-icon-container" style={{ borderColor: '#ef4444', color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', marginBottom: '1.5rem', display: 'inline-flex', padding: '12px', borderRadius: '50%' }}>
+            <Icons.AlertOctagon size={36} />
+          </div>
+          <h2 style={{ fontSize: '1.6rem', marginBottom: '0.75rem', fontFamily: 'var(--font-display)', color: '#fff' }}>
+            {isArabic ? 'الحساب غير نشط حالياً' : 'Profile Temporarily Inactive'}
+          </h2>
+          <p style={{ opacity: 0.8, marginBottom: '2rem', fontSize: '0.92rem', color: '#cbd5e1', lineHeight: '1.6' }}>
+            {isArabic 
+              ? `الملف الشخصي لـ @${vendor.username} غير نشط حالياً بسبب انتهاء صلاحية الاشتراك. يرجى التواصل مع صاحب الملف أو الدعم الفني لإعادة تفعيله.`
+              : `The profile for @${vendor.username} is temporarily inactive due to subscription expiry. Please contact the owner or administrator to renew.`}
+          </p>
+          <a href="#/" className="submit-btn" style={{ textDecoration: 'none', background: 'linear-gradient(135deg, #475569, #1e293b)' }}>
+            <Icons.Home size={16} />
+            {isArabic ? 'العودة للرئيسية' : 'Back to Home'}
           </a>
         </div>
       </div>
@@ -176,7 +216,7 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
   };
 
   return (
-    <div className={`vendor-profile-wrapper ${themeClass}`} style={wrapperStyles}>
+    <div className={`vendor-profile-wrapper ${themeClass}`} style={wrapperStyles} dir={vendor.language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="profile-card animate-fade-in">
 
         {/* Company Badge */}
@@ -194,9 +234,11 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
           </div>
         </div>
 
-        {/* Name & Username */}
+        {/* Name & Job Title */}
         <h1 className="profile-name">{vendor.name}</h1>
-        <span className="profile-username">@{vendor.username}</span>
+        <span className="profile-job-title" style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, opacity: 0.8, marginTop: '2px', marginBottom: '12px' }}>
+          {vendor.job_title || (vendor.language === 'ar' ? 'شريك مهني' : 'Professional Partner')}
+        </span>
 
         <p className="profile-bio">{vendor.bio}</p>
 
@@ -206,20 +248,20 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
             <button
               className="profile-action-btn profile-vcf-btn"
               onClick={handleVCFClick}
-              aria-label="Save Contact"
+              aria-label={vendor.language === 'ar' ? 'حفظ جهة الاتصال' : 'Save Contact'}
             >
               <Icons.UserPlus size={16} />
-              Add Contact
+              {vendor.language === 'ar' ? 'حفظ جهة الاتصال' : 'Save Contact'}
             </button>
             {vendor.phone_number && (
               <a
                 href={`tel:${vendor.phone_number}`}
                 className="profile-action-btn profile-phone-btn"
                 onClick={() => trackEvent(vendor.username, 'phone_click')}
-                aria-label="Call"
+                aria-label={vendor.language === 'ar' ? 'اتصل' : 'Call'}
               >
                 <Icons.Phone size={16} />
-                Call Now
+                {vendor.language === 'ar' ? 'اتصل' : 'Call'}
               </a>
             )}
           </div>
@@ -228,7 +270,7 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
         {/* Social Tabs */}
         <div className="vendor-links-list">
           {activeTabs.map(tab => {
-            const icon = tab.type === 'custom' ? (tab.iconName || 'Link') : getSocialIconName(tab.type);
+            const isInstaPay = tab.type === 'instapay';
             const url = getTabUrl(tab.type, tab.value);
             const displayValue = tab.type === 'custom' ? '' : getTabDisplay(tab.type, tab.value);
 
@@ -242,7 +284,13 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
                 onClick={() => handleLinkClick(tab.type)}
               >
                 <span className="tab-icon">
-                  <DynamicIcon name={icon} size={20} />
+                  {isInstaPay ? (
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#10b981', filter: 'drop-shadow(0 0 4px rgba(16,185,129,0.3))' }}>
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="#10b981" />
+                    </svg>
+                  ) : (
+                    <DynamicIcon name={tab.type === 'custom' ? (tab.iconName || 'Link') : getSocialIconName(tab.type)} size={20} />
+                  )}
                 </span>
                 <span className="tab-text">
                   <span style={{ display: 'block', fontWeight: 700, fontSize: '0.95rem' }}>{tab.label}</span>
@@ -268,8 +316,8 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
                 <Icons.FileText size={22} />
               </div>
               <div>
-                <div className="portfolio-title">{vendor.portfolioPdfName || 'Business Portfolio'}</div>
-                <div className="portfolio-subtitle">PDF Document</div>
+                <div className="portfolio-title">{vendor.portfolioPdfName || (vendor.language === 'ar' ? 'ملف الأعمال' : 'Business Portfolio')}</div>
+                <div className="portfolio-subtitle">{vendor.language === 'ar' ? 'مستند PDF' : 'PDF Document'}</div>
               </div>
             </div>
             <a
@@ -280,18 +328,18 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
               onClick={handlePdfClick}
             >
               <Icons.Download size={14} />
-              View
+              {vendor.language === 'ar' ? 'عرض' : 'View'}
             </a>
           </div>
         )}
 
         {/* Buy Card Banner */}
         <div className="buy-card-banner" onClick={() => window.location.hash = `#/buy?ref=${vendor.username}`}>
-          <h4>Get Your Digital Business Card</h4>
-          <p>Scan this profile or click below to order a custom NFC smart card.</p>
+          <h4>{vendor.language === 'ar' ? 'احصل على بطاقتك الرقمية' : 'Get Your Digital Business Card'}</h4>
+          <p>{vendor.language === 'ar' ? 'انقر هنا لطلب بطاقة NFC مخصصة خاصة بك.' : 'Scan this profile or click below to order a custom NFC smart card.'}</p>
           <button className="buy-card-btn">
             <Icons.CreditCard size={14} />
-            Order Card Now
+            {vendor.language === 'ar' ? 'اطلب البطاقة الآن' : 'Order Card Now'}
           </button>
         </div>
 

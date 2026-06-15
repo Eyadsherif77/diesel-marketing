@@ -42,36 +42,74 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<keyof AnalyticsSummary>('profile_views');
 
+  // Subscription & Reset States
+  const [subExpiry, setSubExpiry] = useState<string | null>(null);
+  const [subDaysLeft, setSubDaysLeft] = useState<number | null>(null);
+  const [resetTimestamp, setResetTimestamp] = useState<string | null>(null);
+  const [statView, setStatView] = useState<'current' | 'lifetime'>('current');
+
+  const calculateDaysLeft = (expiry: string | null) => {
+    if (!expiry) return null;
+    const exp = new Date(expiry);
+    const today = new Date();
+    exp.setHours(0,0,0,0);
+    today.setHours(0,0,0,0);
+    const diffTime = exp.getTime() - today.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
   const loadData = useCallback(async (companyId: string) => {
     setLoading(true);
+    try {
+      // Fetch latest subscription & reset info
+      const { data: compData } = await supabase
+        .from('companies')
+        .select('subscription_end_date, analytics_reset_at')
+        .eq('id', companyId)
+        .single();
+      
+      let subEnd = '';
+      let resetTs = '';
+      if (compData) {
+        subEnd = compData.subscription_end_date ?? '';
+        resetTs = compData.analytics_reset_at ?? '';
+        setSubExpiry(subEnd);
+        setSubDaysLeft(calculateDaysLeft(subEnd));
+        setResetTimestamp(resetTs);
+      }
 
-    // Get vendors that belong to this company
-    const { data: vendorRows } = await supabase
-      .from('vendors')
-      .select('username')
-      .eq('company_id', companyId);
+      // Get vendors that belong to this company
+      const { data: vendorRows } = await supabase
+        .from('vendors')
+        .select('username')
+        .eq('company_id', companyId);
 
-    const usernames = (vendorRows ?? []).map((r: { username: string }) => r.username);
-    const myVendors = vendors.filter(v => usernames.includes(v.username));
-    setCompanyVendors(myVendors);
+      const usernames = (vendorRows ?? []).map((r: { username: string }) => r.username);
+      const myVendors = vendors.filter(v => usernames.includes(v.username));
+      setCompanyVendors(myVendors);
 
-    if (myVendors.length > 0) {
-      const sums = await fetchMultiVendorSummary(myVendors.map(v => v.username));
-      setSummaries(sums);
+      if (myVendors.length > 0) {
+        const sinceFilter = (statView === 'current' && resetTs) ? resetTs : undefined;
+        const sums = await fetchMultiVendorSummary(myVendors.map(v => v.username), sinceFilter);
+        setSummaries(sums);
 
-      // Load chart for first vendor by default
-      if (!selectedVendor) {
-        setSelectedVendor(myVendors[0].username);
-        const daily = await fetchDailyAnalytics(myVendors[0].username, chartRange);
+        const currentSel = selectedVendor && myVendors.some(v => v.username === selectedVendor)
+          ? selectedVendor
+          : myVendors[0].username;
+
+        setSelectedVendor(currentSel);
+
+        const daily = await fetchDailyAnalytics(currentSel, chartRange, sinceFilter);
         setVendorDaily(daily);
       }
+    } catch (err) {
+      console.error('Failed to load company dashboard data:', err);
     }
-
     setLoading(false);
-  }, [vendors, selectedVendor, chartRange]);
+  }, [vendors, selectedVendor, chartRange, statView]);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem('diesel_company_session');
+    const raw = sessionStorage.getItem('devtech_company_session');
     if (!raw) { window.location.hash = '#/company-login'; return; }
     const s: Session = JSON.parse(raw);
     if (s.username.toLowerCase() !== companyUsername.toLowerCase()) {
@@ -83,18 +121,40 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
 
   useEffect(() => {
     if (session && vendors.length > 0) loadData(session.companyId);
-  }, [session, vendors.length]);
+  }, [session, vendors.length, loadData]);
 
   const loadVendorChart = async (username: string) => {
     setSelectedVendor(username);
-    const daily = await fetchDailyAnalytics(username, chartRange);
+    const sinceFilter = (statView === 'current' && resetTimestamp) ? resetTimestamp : undefined;
+    const daily = await fetchDailyAnalytics(username, chartRange, sinceFilter);
     setVendorDaily(daily);
   };
 
+  const handleResetAnalytics = async () => {
+    if (!session) return;
+    if (confirm('Are you sure you want to reset your team analytics for the current period? This will filter the current period view to start from today. Historical lifetime analytics will NOT be deleted.')) {
+      const now = new Date().toISOString();
+      const { error } = await supabase
+        .from('companies')
+        .update({ analytics_reset_at: now })
+        .eq('id', session.companyId);
+      
+      if (!error) {
+        setResetTimestamp(now);
+        loadData(session.companyId);
+      } else {
+        alert('Failed to reset analytics. Please try again.');
+      }
+    }
+  };
+
   const handleLogout = () => {
-    sessionStorage.removeItem('diesel_company_session');
+    sessionStorage.removeItem('devtech_company_session');
     window.location.hash = '#/company-login';
   };
+
+  const isExpired = subDaysLeft !== null && subDaysLeft < 0;
+  const isWarning = subDaysLeft !== null && subDaysLeft >= 0 && subDaysLeft <= 7;
 
   if (!session) return null;
 
@@ -167,6 +227,54 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
           </p>
         </div>
 
+        {/* Subscription Expired Warning Banner */}
+        {isExpired && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '1rem 1.5rem',
+            background: 'rgba(239, 68, 68, 0.15)',
+            border: '1px solid #ef4444',
+            borderRadius: '12px',
+            color: '#fca5a5',
+            marginBottom: '1.5rem',
+            animation: 'fadeInUp 0.3s ease'
+          }}>
+            <Icons.AlertOctagon size={24} style={{ color: '#ef4444', flexShrink: 0 }} />
+            <div>
+              <strong style={{ display: 'block', fontSize: '1rem', color: '#fff', fontWeight: 700 }}>Subscription Expired</strong>
+              <span style={{ fontSize: '0.85rem' }}>
+                Your company profile access expired on <strong>{new Date(subExpiry!).toLocaleDateString()}</strong>. Some features may be restricted. Please contact support/admin to renew.
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Subscription Expiring Soon Warning Notification Banner */}
+        {isWarning && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '1rem 1.5rem',
+            background: 'rgba(245, 158, 11, 0.15)',
+            border: '1px solid #f59e0b',
+            borderRadius: '12px',
+            color: '#fef08a',
+            marginBottom: '1.5rem',
+            animation: 'fadeInUp 0.3s ease'
+          }}>
+            <Icons.BellRing size={24} style={{ color: '#f59e0b', flexShrink: 0 }} />
+            <div>
+              <strong style={{ display: 'block', fontSize: '1rem', color: '#fff', fontWeight: 700 }}>Subscription Expiring Soon</strong>
+              <span style={{ fontSize: '0.85rem' }}>
+                Your company subscription has only <strong>{subDaysLeft} day{subDaysLeft !== 1 ? 's' : ''} left</strong> (expires on {new Date(subExpiry!).toLocaleDateString()}). Please renew shortly.
+              </span>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div style={{ textAlign: 'center', padding: '5rem', color: '#475569' }}>
             <Icons.Loader size={36} style={{ animation: 'spin 1s linear infinite', marginBottom: '1rem' }} />
@@ -180,6 +288,39 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
           </div>
         ) : (
           <>
+            {/* View Period Selector & Reset Button */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <div className="dash-chart-tabs" style={{ margin: 0 }}>
+                <button className={`dash-chart-tab ${statView === 'current' ? 'active' : ''}`} onClick={() => setStatView('current')}>
+                  Current Period {resetTimestamp && `(Since ${new Date(resetTimestamp).toLocaleDateString()})`}
+                </button>
+                <button className={`dash-chart-tab ${statView === 'lifetime' ? 'active' : ''}`} onClick={() => setStatView('lifetime')}>
+                  Lifetime Analytics (All-Time)
+                </button>
+              </div>
+              <button 
+                onClick={handleResetAnalytics}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  borderRadius: '30px',
+                  color: '#f87171',
+                  padding: '6px 14px',
+                  fontSize: '0.8rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  transition: 'all 0.2s'
+                }}
+                title="Resets current period starting date"
+              >
+                <Icons.RotateCcw size={12} />
+                Reset Period
+              </button>
+            </div>
+
             {/* Company Aggregate Stats */}
             <div className="dash-stats-grid">
               {COMPANY_STATS.map(card => (

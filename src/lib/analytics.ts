@@ -47,12 +47,19 @@ export interface DailyPoint {
 }
 
 export async function fetchAnalyticsSummary(
-  vendorUsername: string
+  vendorUsername: string,
+  since?: string
 ): Promise<AnalyticsSummary> {
-  const { data, error } = await supabase
+  let query = supabase
     .from('vendor_analytics')
     .select('event_type, link_type')
     .eq('vendor_username', vendorUsername);
+
+  if (since) {
+    query = query.gte('created_at', since);
+  }
+
+  const { data, error } = await query;
 
   if (error || !data) {
     return {
@@ -103,16 +110,22 @@ export async function fetchAnalyticsSummary(
 
 export async function fetchDailyAnalytics(
   vendorUsername: string,
-  days = 30
+  days = 30,
+  since?: string
 ): Promise<DailyPoint[]> {
-  const since = new Date();
-  since.setDate(since.getDate() - days);
+  const sinceDate = new Date();
+  sinceDate.setDate(sinceDate.getDate() - days);
+
+  let querySince = sinceDate.toISOString();
+  if (since && new Date(since) > sinceDate) {
+    querySince = since;
+  }
 
   const { data, error } = await supabase
     .from('vendor_analytics')
     .select('event_type, created_at')
     .eq('vendor_username', vendorUsername)
-    .gte('created_at', since.toISOString());
+    .gte('created_at', querySince);
 
   if (error || !data) return [];
 
@@ -146,14 +159,21 @@ export async function fetchDailyAnalytics(
 }
 
 export async function fetchMultiVendorSummary(
-  vendorUsernames: string[]
+  vendorUsernames: string[],
+  since?: string
 ): Promise<Record<string, AnalyticsSummary>> {
   if (vendorUsernames.length === 0) return {};
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('vendor_analytics')
     .select('vendor_username, event_type, link_type')
     .in('vendor_username', vendorUsernames);
+
+  if (since) {
+    query = query.gte('created_at', since);
+  }
+
+  const { data, error } = await query;
 
   if (error || !data) {
     return Object.fromEntries(

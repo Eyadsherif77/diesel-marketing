@@ -2,70 +2,94 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as Icons from 'lucide-react';
 import '../styles/landing.css';
 
-const FEATURES = [
+const SERVICES = [
+  {
+    icon: 'Globe',
+    title: 'Website Design',
+    desc: 'All types of websites — static, dynamic, admin panels, e-commerce stores, complete with domain and hosting setup.',
+    color: '#7660F1',
+    sub: [],
+  },
+  {
+    icon: 'Megaphone',
+    title: 'Digital Marketing',
+    desc: 'Professional page management and targeted ad creation to grow your brand and reach the right audience.',
+    color: '#2563EB',
+    sub: [],
+  },
+  {
+    icon: 'Camera',
+    title: 'Product Photography & Videography',
+    desc: 'High-quality product photography and professional videography that showcase your brand at its best.',
+    color: '#06B6D4',
+    sub: [],
+  },
+  {
+    icon: 'Palette',
+    title: 'Graphic Design',
+    desc: 'From digital and physical profiles to professional logos and complete brand identity systems.',
+    color: '#7660F1',
+    sub: ['Digital & physical profile design', 'Professional logo design', 'Complete brand identity packages'],
+  },
+  {
+    icon: 'Code2',
+    title: 'Software Development',
+    desc: 'Custom software solutions including accounting, inventory, sales, and fully integrated ERP systems.',
+    color: '#2563EB',
+    sub: ['Accounting & inventory systems', 'Sales management platforms', 'Integrated ERP solutions'],
+  },
   {
     icon: 'Nfc',
-    title: 'NFC Smart Cards',
-    desc: 'Tap your card on any smartphone. No app needed. Instant profile sharing in one touch.',
-    color: '#6366f1',
-  },
-  {
-    icon: 'BarChart2',
-    title: 'Live Analytics',
-    desc: 'Track every view, scan, and click in real time. Know exactly how your profile performs.',
-    color: '#10b981',
-  },
-  {
-    icon: 'Building2',
-    title: 'Team Dashboards',
-    desc: 'Manage your entire sales team. See who\'s performing and which links drive the most leads.',
-    color: '#f59e0b',
-  },
-  {
-    icon: 'UserCheck',
-    title: 'Verified Profiles',
-    desc: 'Every profile is verified and branded. Stand out with a premium digital identity.',
-    color: '#ec4899',
-  },
-  {
-    icon: 'Download',
-    title: 'Instant Contact Save',
-    desc: 'One tap to save your contact to any phone. Works natively on iPhone and Android.',
-    color: '#06b6d4',
-  },
-  {
-    icon: 'Shield',
-    title: 'Secure & Private',
-    desc: 'Your data lives in Supabase. No tracking pixels. No third-party ad networks.',
-    color: '#a855f7',
+    title: 'Professional NFC Business Cards',
+    desc: 'Premium NFC cards with CRM analytics dashboards and fully customized card designs for every professional.',
+    color: '#06B6D4',
+    sub: ['Live analytics & CRM dashboard', 'Custom card design', 'Team management portals'],
   },
 ];
 
 const STATS = [
-  { value: '500+', label: 'Active Vendors' },
+  { value: '15+', label: 'Years of Experience' },
+  { value: '500+', label: 'Active Clients' },
   { value: '50K+', label: 'Profile Views' },
-  { value: '12K+', label: 'Contacts Saved' },
-  { value: '99%', label: 'Uptime' },
+  { value: '99%', label: 'Client Satisfaction' },
 ];
 
-const TEAM = [
+const CLIENTS = [
   {
-    name: 'Omar Diesel',
-    role: 'Founder & CEO',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&q=80',
-    desc: 'Visionary behind the Diesel NFC platform. 10+ years in digital marketing.',
+    name: 'TechCorp Egypt',
+    logo: 'Building2',
+    desc: 'Deployed 120 NFC cards for their entire sales team — saw a 3× increase in lead conversions.',
+    color: '#7660F1',
   },
   {
-    name: 'Sara Khalil',
-    role: 'Head of Sales',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
-    desc: 'Drives partner growth and manages our vendor network across the region.',
+    name: 'Gulf Properties',
+    logo: 'Home',
+    desc: 'Real estate agents sharing digital profiles at site visits without printing a single card.',
+    color: '#2563EB',
   },
   {
-    name: 'Youssef Nasser',
-    role: 'Tech Lead',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-    desc: 'Architect of the analytics engine and NFC profile infrastructure.',
+    name: 'MedHub Clinics',
+    logo: 'Heart',
+    desc: 'Doctors and specialists using DevTech profiles to share credentials and contacts instantly.',
+    color: '#06B6D4',
+  },
+  {
+    name: 'StartUp Cairo',
+    logo: 'Rocket',
+    desc: 'Startup founders networking at events — one tap and their full deck is in your phone.',
+    color: '#7660F1',
+  },
+  {
+    name: 'FinEdge Banking',
+    logo: 'Landmark',
+    desc: 'Relationship managers using verified profiles to build trust before the first meeting.',
+    color: '#2563EB',
+  },
+  {
+    name: 'Apex Logistics',
+    logo: 'Truck',
+    desc: 'Operations team sharing contacts and tracking client engagement with live analytics.',
+    color: '#06B6D4',
   },
 ];
 
@@ -80,10 +104,11 @@ export const LandingPage: React.FC = () => {
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [contactSent, setContactSent] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [nfcMenuOpen, setNfcMenuOpen] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
+  const nfcRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Parallax on scroll
     const onScroll = () => {
       if (heroRef.current) {
         heroRef.current.style.backgroundPositionY = `${window.scrollY * 0.4}px`;
@@ -91,6 +116,17 @@ export const LandingPage: React.FC = () => {
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Close NFC dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (nfcRef.current && !nfcRef.current.contains(e.target as Node)) {
+        setNfcMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   const handleContact = (e: React.FormEvent) => {
@@ -112,28 +148,85 @@ export const LandingPage: React.FC = () => {
       <nav className="lp-nav">
         <div className="lp-nav-inner">
           <a href="#/" className="lp-nav-logo">
-            <Icons.Zap size={22} />
-            <span>Diesel</span>
+            <img src="/logo.png" alt="DevTech Logo" className="lp-nav-logo-img" />
+            <span>DevTech</span>
             <span className="lp-nav-logo-tag">NFC</span>
           </a>
 
           <div className={`lp-nav-links ${menuOpen ? 'open' : ''}`}>
             <button onClick={() => scrollTo('about')}>About</button>
-            <button onClick={() => scrollTo('features')}>Features</button>
+            <button onClick={() => scrollTo('services')}>Services</button>
             <button onClick={() => scrollTo('stats')}>Results</button>
-            <button onClick={() => scrollTo('team')}>Team</button>
+            <button onClick={() => scrollTo('clients')}>Clients</button>
             <button onClick={() => scrollTo('contact')}>Contact</button>
+            
+            <div className="lp-mobile-nfc-links">
+              <div className="lp-mobile-nfc-header">NFC Card Options</div>
+              <a href="#/login" onClick={() => setMenuOpen(false)}>Individual Login</a>
+              <a href="#/company-login" onClick={() => setMenuOpen(false)}>Company Login</a>
+              <a href="#/buy" onClick={() => setMenuOpen(false)}>Order NFC Card</a>
+              <a href="https://accept.paymob.com" target="_blank" rel="noreferrer" onClick={() => setMenuOpen(false)}>Paymob Payment</a>
+            </div>
           </div>
 
           <div className="lp-nav-cta">
-            <a href="#/login" className="lp-btn-outline">
-              <Icons.User size={15} />
-              Individual Login
-            </a>
-            <a href="#/company-login" className="lp-btn-primary">
-              <Icons.Building2 size={15} />
-              Company Login
-            </a>
+            {/* Three-dot NFC Card dropdown */}
+            <div className="lp-nfc-dropdown" ref={nfcRef}>
+              <button
+                className="lp-nfc-dot-btn"
+                onClick={() => setNfcMenuOpen(prev => !prev)}
+                title="NFC Card Options"
+              >
+                <Icons.Nfc size={16} />
+                <span>NFC Card</span>
+                <Icons.ChevronDown size={14} style={{ transition: 'transform 0.2s', transform: nfcMenuOpen ? 'rotate(180deg)' : 'rotate(0)' }} />
+              </button>
+              {nfcMenuOpen && (
+                <div className="lp-nfc-menu">
+                  <div className="lp-nfc-menu-header">
+                    <Icons.Nfc size={14} color="#7660F1" />
+                    NFC Card Portal
+                  </div>
+                  <a href="#/login" className="lp-nfc-menu-item" onClick={() => setNfcMenuOpen(false)}>
+                    <div className="lp-nfc-menu-icon" style={{ background: 'rgba(118,96,241,0.12)', color: '#7660F1' }}>
+                      <Icons.User size={15} />
+                    </div>
+                    <div>
+                      <div className="lp-nfc-menu-title">Individual Login</div>
+                      <div className="lp-nfc-menu-sub">Access your personal analytics</div>
+                    </div>
+                  </a>
+                  <a href="#/company-login" className="lp-nfc-menu-item" onClick={() => setNfcMenuOpen(false)}>
+                    <div className="lp-nfc-menu-icon" style={{ background: 'rgba(37,99,235,0.12)', color: '#2563EB' }}>
+                      <Icons.Building2 size={15} />
+                    </div>
+                    <div>
+                      <div className="lp-nfc-menu-title">Company Login</div>
+                      <div className="lp-nfc-menu-sub">Team dashboard & CRM</div>
+                    </div>
+                  </a>
+                  <div className="lp-nfc-menu-divider" />
+                  <a href="#/buy" className="lp-nfc-menu-item lp-nfc-menu-item-cta" onClick={() => setNfcMenuOpen(false)}>
+                    <div className="lp-nfc-menu-icon" style={{ background: 'rgba(6,182,212,0.12)', color: '#06B6D4' }}>
+                      <Icons.CreditCard size={15} />
+                    </div>
+                    <div>
+                      <div className="lp-nfc-menu-title">Order NFC Card</div>
+                      <div className="lp-nfc-menu-sub">Get your smart card today</div>
+                    </div>
+                  </a>
+                  <a href="https://accept.paymob.com" target="_blank" rel="noreferrer" className="lp-nfc-menu-item" onClick={() => setNfcMenuOpen(false)}>
+                    <div className="lp-nfc-menu-icon" style={{ background: 'rgba(118,96,241,0.12)', color: '#7660F1' }}>
+                      <Icons.Wallet size={15} />
+                    </div>
+                    <div>
+                      <div className="lp-nfc-menu-title">Paymob Payment</div>
+                      <div className="lp-nfc-menu-sub">Secure online payment</div>
+                    </div>
+                  </a>
+                </div>
+              )}
+            </div>
           </div>
 
           <button className="lp-nav-burger" onClick={() => setMenuOpen(!menuOpen)}>
@@ -144,47 +237,45 @@ export const LandingPage: React.FC = () => {
 
       {/* ─── Hero ───────────────────────────────────────────────── */}
       <section className="lp-hero" ref={heroRef} id="hero">
+        <div className="lp-hero-overlay" />
         <div className="lp-hero-orb lp-orb-1" />
         <div className="lp-hero-orb lp-orb-2" />
         <div className="lp-hero-orb lp-orb-3" />
 
-        <div className="lp-hero-content animate-fade-in">
-          <div className="lp-hero-badge">
-            <Icons.Sparkles size={14} />
-            Smart NFC Business Cards
-          </div>
-          <h1 className="lp-hero-title">
-            Your Digital Identity,<br />
-            <span className="lp-gradient-text">Powered by Data</span>
-          </h1>
-          <p className="lp-hero-subtitle">
-            Share your profile with one tap. Track every view, scan, and click in real time.
-            Built for ambitious professionals and high-performing sales teams.
-          </p>
+        <div className="lp-hero-inner">
+          <div className="lp-hero-content animate-fade-in">
+            <div className="lp-hero-badge">
+              <Icons.Sparkles size={14} />
+              15+ Years of Digital Excellence
+            </div>
+            <h1 className="lp-hero-title">
+              Transforming Ideas Into<br />
+              <span className="lp-gradient-text">Digital Innovation</span>
+            </h1>
+            <p className="lp-hero-subtitle">
+              From NFC smart cards and custom software to web design and digital marketing —
+              DevTech delivers complete digital solutions tailored for your business growth.
+            </p>
 
-          <div className="lp-hero-actions">
-            <a href="#/buy" className="lp-btn-hero-primary">
-              <Icons.CreditCard size={18} />
-              Order Your Card
-            </a>
-            <button className="lp-btn-hero-secondary" onClick={() => scrollTo('about')}>
-              <Icons.ChevronDown size={18} />
-              Learn More
-            </button>
-          </div>
-        </div>
-
-        {/* Floating card mockup */}
-        <div className="lp-hero-card-mockup">
-          <div className="lp-mockup-card">
-            <div className="lp-mockup-avatar" />
-            <div className="lp-mockup-name" />
-            <div className="lp-mockup-tag" />
-            <div className="lp-mockup-links">
-              {[1, 2, 3].map(i => <div key={i} className="lp-mockup-link" />)}
+            <div className="lp-hero-actions">
+              <a href="#/buy" className="lp-btn-hero-primary">
+                <Icons.Nfc size={18} />
+                Get NFC Card
+              </a>
+              <button className="lp-btn-hero-secondary" onClick={() => scrollTo('services')}>
+                <Icons.Grid size={18} />
+                Our Services
+              </button>
             </div>
           </div>
-          <div className="lp-mockup-nfc-ring" />
+
+          {/* Single Hero Image */}
+          <div className="lp-hero-images-container">
+            <div className="lp-hero-image-frame lp-hero-image-single">
+              <img src="/hero-photo2.jpg" alt="DevTech NFC Card" className="lp-hero-banner-img" />
+              <div className="lp-hero-image-glow" />
+            </div>
+          </div>
         </div>
       </section>
 
@@ -202,26 +293,38 @@ export const LandingPage: React.FC = () => {
       <section className="lp-section" id="about">
         <div className="lp-section-inner lp-about-grid">
           <div className="lp-about-text">
-            <div className="lp-section-badge">About Diesel</div>
-            <h2 className="lp-section-title">We're Redefining How Professionals Connect</h2>
+            <div className="lp-section-badge">About DevTech</div>
+            <h2 className="lp-section-title">Passionate About Transforming Ideas Into Solutions</h2>
             <p className="lp-about-desc">
-              Diesel NFC was born from one simple problem: paper business cards are dead.
-              We built a platform that lets every vendor share a living, breathing digital profile
-              — complete with social links, portfolios, and real-time analytics.
+              At DevTech, we are passionate about transforming ideas into innovative digital solutions.
+              With over <strong style={{ color: '#7660F1' }}>15 years of experience</strong> in the technology sector,
+              we have built a strong reputation for delivering high-quality software and creative services across Egypt.
             </p>
             <p className="lp-about-desc">
-              From solo freelancers to enterprise sales teams, Diesel gives you the data and
-              tools to understand your network and grow your reach.
+              Our expertise spans a wide range of digital solutions, including website design and development,
+              ERP systems, custom software solutions, NFC business cards, and graphic design services. We help
+              businesses of all sizes enhance their digital presence, streamline operations, and create meaningful
+              connections with their customers.
+            </p>
+            <p className="lp-about-desc">
+              By DevTech, we combine technology, creativity, and innovation to provide solutions that are
+              tailored to each client's unique needs. Our commitment to excellence, customer satisfaction, and
+              continuous innovation has made us a trusted partner for businesses looking to grow in the digital age.
+            </p>
+            <p className="lp-about-desc">
+              Our focus goes beyond delivering results — we are committed to creating <strong style={{ color: '#06B6D4' }}>real value</strong>.
+              Every solution we provide is designed to generate long-term impact, helping our clients achieve
+              growth, efficiency, and lasting success.
             </p>
             <div className="lp-about-bullets">
               {[
-                'One-tap NFC sharing — no app required',
-                'Real-time analytics dashboard',
-                'Individual & team management portals',
-                'Instant vCard contact saving on iOS & Android',
+                'Website design & ERP software development',
+                'NFC business cards with live analytics',
+                'Digital marketing & graphic design',
+                'Tailored solutions for every business size',
               ].map((item, i) => (
                 <div key={i} className="lp-about-bullet">
-                  <Icons.CheckCircle size={16} color="#6366f1" />
+                  <Icons.CheckCircle size={16} color="#7660F1" />
                   <span>{item}</span>
                 </div>
               ))}
@@ -233,41 +336,58 @@ export const LandingPage: React.FC = () => {
           </div>
           <div className="lp-about-visual">
             <div className="lp-about-card">
-              <div className="lp-about-card-icon" style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8' }}>
+              <div className="lp-about-card-icon" style={{ background: 'rgba(118,96,241,0.15)', color: '#7660F1' }}>
                 <Icons.Nfc size={32} />
               </div>
               <h3>Tap. Share. Connect.</h3>
-              <p>Your entire professional presence, delivered instantly to any phone.</p>
+              <p>Your entire professional presence, delivered instantly to any phone with one tap.</p>
             </div>
             <div className="lp-about-card lp-about-card-offset">
-              <div className="lp-about-card-icon" style={{ background: 'rgba(16,185,129,0.15)', color: '#34d399' }}>
+              <div className="lp-about-card-icon" style={{ background: 'rgba(6,182,212,0.15)', color: '#06B6D4' }}>
                 <Icons.TrendingUp size={32} />
               </div>
               <h3>Track What Works</h3>
-              <p>See exactly which links people click and how they find your profile.</p>
+              <p>Real-time CRM analytics showing exactly how your audience engages with your profile.</p>
+            </div>
+            <div className="lp-about-card">
+              <div className="lp-about-card-icon" style={{ background: 'rgba(37,99,235,0.15)', color: '#2563EB' }}>
+                <Icons.Code2 size={32} />
+              </div>
+              <h3>Built for Growth</h3>
+              <p>From solo freelancers to enterprise teams — solutions that scale with your ambition.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ─── Features ───────────────────────────────────────────── */}
-      <section className="lp-section lp-section-dark" id="features">
+      {/* ─── Services ───────────────────────────────────────────── */}
+      <section className="lp-section lp-section-dark" id="services">
         <div className="lp-section-inner">
           <div className="lp-section-header">
-            <div className="lp-section-badge">Features</div>
-            <h2 className="lp-section-title">Everything You Need to Stand Out</h2>
+            <div className="lp-section-badge">Our Services</div>
+            <h2 className="lp-section-title">Complete Digital Solutions Under One Roof</h2>
             <p className="lp-section-subtitle">
-              A complete platform from card creation to analytics — no extra tools needed.
+              From websites and software to NFC cards and graphic design — everything your business needs to grow.
             </p>
           </div>
           <div className="lp-features-grid">
-            {FEATURES.map((f, i) => (
+            {SERVICES.map((f, i) => (
               <div key={i} className="lp-feature-card">
                 <div className="lp-feature-icon" style={{ background: `${f.color}18`, color: f.color }}>
                   <DynIcon name={f.icon} size={26} />
                 </div>
                 <h3 className="lp-feature-title">{f.title}</h3>
                 <p className="lp-feature-desc">{f.desc}</p>
+                {f.sub.length > 0 && (
+                  <ul className="lp-feature-sub">
+                    {f.sub.map((s, si) => (
+                      <li key={si}>
+                        <Icons.ChevronRight size={12} color={f.color} />
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             ))}
           </div>
@@ -278,12 +398,12 @@ export const LandingPage: React.FC = () => {
       <section className="lp-analytics-cta" id="analytics">
         <div className="lp-analytics-cta-inner">
           <div className="lp-analytics-cta-text">
-            <div className="lp-section-badge" style={{ marginBottom: '1rem' }}>Analytics Portal</div>
+            <div className="lp-section-badge" style={{ marginBottom: '1rem' }}>NFC Analytics Portal</div>
             <h2 className="lp-section-title" style={{ color: '#fff', marginBottom: '1rem' }}>
               See How Your Profile Performs
             </h2>
             <p style={{ color: '#94a3b8', lineHeight: 1.7, marginBottom: '2rem', fontSize: '1rem' }}>
-              Access your personal or company analytics dashboard. Track views, QR scans, 
+              Access your personal or company CRM analytics dashboard. Track profile views, QR scans,
               link clicks, contact saves, and phone calls — all in one place, updated in real time.
             </p>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
@@ -301,15 +421,15 @@ export const LandingPage: React.FC = () => {
             {/* Mini dashboard preview */}
             <div className="lp-mini-dash">
               <div className="lp-mini-dash-header">
-                <Icons.BarChart2 size={16} color="#6366f1" />
+                <Icons.BarChart2 size={16} color="#7660F1" />
                 <span>Analytics Overview</span>
               </div>
               <div className="lp-mini-stats">
                 {[
-                  { label: 'Profile Views', value: '1,284', icon: 'Eye', color: '#6366f1' },
-                  { label: 'QR Scans', value: '347', icon: 'QrCode', color: '#10b981' },
-                  { label: 'Link Clicks', value: '892', icon: 'MousePointer', color: '#f59e0b' },
-                  { label: 'Contacts Saved', value: '203', icon: 'UserPlus', color: '#ec4899' },
+                  { label: 'Profile Views', value: '1,284', icon: 'Eye', color: '#7660F1' },
+                  { label: 'QR Scans', value: '347', icon: 'QrCode', color: '#06B6D4' },
+                  { label: 'Link Clicks', value: '892', icon: 'MousePointer', color: '#2563EB' },
+                  { label: 'Contacts Saved', value: '203', icon: 'UserPlus', color: '#7660F1' },
                 ].map((s, i) => (
                   <div key={i} className="lp-mini-stat">
                     <div className="lp-mini-stat-icon" style={{ color: s.color }}>
@@ -333,23 +453,24 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ─── Team ───────────────────────────────────────────────── */}
-      <section className="lp-section" id="team">
+      {/* ─── Clients ─────────────────────────────────────────────── */}
+      <section className="lp-section" id="clients">
         <div className="lp-section-inner">
           <div className="lp-section-header">
-            <div className="lp-section-badge">Our Team</div>
-            <h2 className="lp-section-title">Built by People Who Know Business</h2>
+            <div className="lp-section-badge">Our Clients</div>
+            <h2 className="lp-section-title">Trusted by Leading Organizations</h2>
             <p className="lp-section-subtitle">
-              We've been in the field. We know what sales teams need.
+              From startups to enterprises — DevTech powers professionals across every industry in Egypt and beyond.
             </p>
           </div>
-          <div className="lp-team-grid">
-            {TEAM.map((m, i) => (
-              <div key={i} className="lp-team-card">
-                <img src={m.avatar} alt={m.name} className="lp-team-avatar" />
-                <h3 className="lp-team-name">{m.name}</h3>
-                <span className="lp-team-role">{m.role}</span>
-                <p className="lp-team-desc">{m.desc}</p>
+          <div className="lp-clients-grid">
+            {CLIENTS.map((c, i) => (
+              <div key={i} className="lp-client-card">
+                <div className="lp-client-icon" style={{ background: `${c.color}18`, color: c.color }}>
+                  <DynIcon name={c.logo} size={28} />
+                </div>
+                <h3 className="lp-client-name">{c.name}</h3>
+                <p className="lp-client-desc">{c.desc}</p>
               </div>
             ))}
           </div>
@@ -362,14 +483,14 @@ export const LandingPage: React.FC = () => {
           <div className="lp-contact-grid">
             <div className="lp-contact-info">
               <div className="lp-section-badge">Contact Us</div>
-              <h2 className="lp-section-title">Let's Talk</h2>
+              <h2 className="lp-section-title">Let's Build Something Together</h2>
               <p style={{ color: '#94a3b8', lineHeight: 1.7, marginBottom: '2rem' }}>
-                Have questions about our platform, pricing, or want to set up your team?
+                Have questions about our services, pricing, or want to set up your team's NFC cards?
                 We'd love to hear from you. Expect a reply within 24 hours.
               </p>
               <div className="lp-contact-details">
                 {[
-                  { icon: 'Mail', label: 'hello@diesel-nfc.com' },
+                  { icon: 'Mail', label: 'hello@devtech-nfc.com' },
                   { icon: 'Phone', label: '+20 100 000 0000' },
                   { icon: 'MapPin', label: 'Cairo, Egypt' },
                 ].map((c, i) => (
@@ -386,7 +507,7 @@ export const LandingPage: React.FC = () => {
             <form className="lp-contact-form" onSubmit={handleContact}>
               {contactSent ? (
                 <div className="lp-contact-success">
-                  <Icons.CheckCircle size={36} color="#10b981" />
+                  <Icons.CheckCircle size={36} color="#06B6D4" />
                   <h3>Message Sent!</h3>
                   <p>We'll get back to you within 24 hours.</p>
                 </div>
@@ -397,7 +518,7 @@ export const LandingPage: React.FC = () => {
                     <input
                       type="text"
                       className="input-field"
-                      placeholder="Alex Carter"
+                      placeholder="Ahmed Hassan"
                       value={contactForm.name}
                       onChange={e => setContactForm(p => ({ ...p, name: e.target.value }))}
                       required
@@ -408,7 +529,7 @@ export const LandingPage: React.FC = () => {
                     <input
                       type="email"
                       className="input-field"
-                      placeholder="alex@company.com"
+                      placeholder="ahmed@company.com"
                       value={contactForm.email}
                       onChange={e => setContactForm(p => ({ ...p, email: e.target.value }))}
                       required
@@ -419,7 +540,7 @@ export const LandingPage: React.FC = () => {
                     <textarea
                       className="input-field"
                       rows={4}
-                      placeholder="Tell us what you need..."
+                      placeholder="Tell us about your project or what you need..."
                       value={contactForm.message}
                       onChange={e => setContactForm(p => ({ ...p, message: e.target.value }))}
                       required
@@ -441,16 +562,19 @@ export const LandingPage: React.FC = () => {
       <footer className="lp-footer">
         <div className="lp-footer-inner">
           <div className="lp-footer-brand">
-            <Icons.Zap size={18} />
-            <span>Diesel NFC</span>
+            <img src="/logo.png" alt="DevTech" className="lp-footer-logo-img" />
+            <div>
+              <div className="lp-footer-brand-name">DevTech</div>
+              <div className="lp-footer-brand-sub">Digital Solutions</div>
+            </div>
           </div>
           <div className="lp-footer-links">
-            <a href="#/admin">Admin Panel</a>
-            <a href="#/buy">Order Card</a>
-            <a href="#/login">Individual Login</a>
-            <a href="#/company-login">Company Login</a>
+            <button onClick={() => scrollTo('about')} className="lp-footer-link-btn">About Us</button>
+            <button onClick={() => scrollTo('services')} className="lp-footer-link-btn">Our Services</button>
+            <button onClick={() => scrollTo('clients')} className="lp-footer-link-btn">Our Clients</button>
+            <button onClick={() => scrollTo('contact')} className="lp-footer-link-btn">Contact Us</button>
           </div>
-          <p className="lp-footer-copy">© {new Date().getFullYear()} Diesel NFC. All rights reserved.</p>
+          <p className="lp-footer-copy">© {new Date().getFullYear()} DevTech. All rights reserved. Cairo, Egypt.</p>
         </div>
       </footer>
     </div>

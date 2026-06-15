@@ -24,7 +24,7 @@ export const CompanyLogin: React.FC = () => {
     }
 
     sessionStorage.setItem(
-      'diesel_company_session',
+      'devtech_company_session',
       JSON.stringify({
         username: username.trim(),
         companyId: result.companyId,

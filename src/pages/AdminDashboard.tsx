@@ -41,7 +41,7 @@ export const AdminDashboard: React.FC = () => {
   } = useApp();
 
   // Authentication states
-  const [isLoggedIn, setIsLoggedIn] = useState(() => sessionStorage.getItem('diesel_admin_logged') === 'true');
+  const [isLoggedIn, setIsLoggedIn] = useState(() => sessionStorage.getItem('devtech_admin_logged') === 'true');
   const [loginUser, setLoginUser] = useState('');
   const [loginPass, setLoginPass] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -61,7 +61,7 @@ export const AdminDashboard: React.FC = () => {
   const [vendorUsername, setVendorUsername] = useState('');
   const [vendorBio, setVendorBio] = useState('');
   const [vendorAvatar, setVendorAvatar] = useState('');
-  const [vendorCompanyName, setVendorCompanyName] = useState('Diesel');
+  const [vendorCompanyName, setVendorCompanyName] = useState('DevTech');
   const [vendorPdfUrl, setVendorPdfUrl] = useState('');
   const [vendorPdfName, setVendorPdfName] = useState('');
   const [vendorTheme, setVendorTheme] = useState<ThemeConfig>({ preset: 'cosmic-night' });
@@ -75,10 +75,13 @@ export const AdminDashboard: React.FC = () => {
   const [vendorPhone, setVendorPhone] = useState('');
   const [vendorEmail, setVendorEmail] = useState('');
   const [vendorWebsite, setVendorWebsite] = useState('');
+  const [vendorJobTitle, setVendorJobTitle] = useState('');
+  const [vendorSubscriptionEndDate, setVendorSubscriptionEndDate] = useState('');
+  const [vendorLanguage, setVendorLanguage] = useState<'en' | 'ar'>('en');
 
   // Company & Individual Account Management
-  const [companies, setCompanies] = useState<{ id: string; company_name: string; username: string; created_at: string }[]>([]);
-  const [individualAccounts, setIndividualAccounts] = useState<{ id: string; username: string; vendor_username: string; created_at: string }[]>([]);
+  const [companies, setCompanies] = useState<{ id: string; company_name: string; username: string; created_at: string; subscription_end_date?: string; analytics_reset_at?: string }[]>([]);
+  const [individualAccounts, setIndividualAccounts] = useState<{ id: string; username: string; vendor_username: string; created_at: string; subscription_end_date?: string; analytics_reset_at?: string }[]>([]);
   const [accountsLoading, setAccountsLoading] = useState(false);
 
   // Create Company Form
@@ -121,7 +124,7 @@ export const AdminDashboard: React.FC = () => {
     setLoginError('');
 
     if (loginUser === 'admin' && loginPass === 'admin123') {
-      sessionStorage.setItem('diesel_admin_logged', 'true');
+      sessionStorage.setItem('devtech_admin_logged', 'true');
       setIsLoggedIn(true);
     } else {
       setLoginError('Invalid username or password credentials.');
@@ -129,7 +132,7 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem('diesel_admin_logged');
+    sessionStorage.removeItem('devtech_admin_logged');
     setIsLoggedIn(false);
     setLoginUser('');
     setLoginPass('');
@@ -149,6 +152,9 @@ export const AdminDashboard: React.FC = () => {
     setVendorPhone(vendor.phone_number ?? '');
     setVendorEmail(vendor.email ?? '');
     setVendorWebsite(vendor.website ?? '');
+    setVendorJobTitle(vendor.job_title ?? '');
+    setVendorSubscriptionEndDate(vendor.subscription_end_date ?? '');
+    setVendorLanguage(vendor.language ?? 'en');
     setActiveFormTab('info');
   };
 
@@ -188,6 +194,9 @@ export const AdminDashboard: React.FC = () => {
       phone_number: vendorPhone,
       email: vendorEmail,
       website: vendorWebsite,
+      job_title: vendorJobTitle,
+      subscription_end_date: vendorSubscriptionEndDate,
+      language: vendorLanguage,
     };
 
     await updateVendor(editingVendor.username, updatedVendor);
@@ -218,17 +227,20 @@ export const AdminDashboard: React.FC = () => {
     const newVendor: Vendor = {
       username: cleanUsername,
       name: newName,
-      companyName: 'Diesel',
+      companyName: 'DevTech',
       avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80',
-      bio: `Professional agent representing Diesel. Feel free to connect via any of the links below.`,
+      bio: `Professional partner representing DevTech. Feel free to connect via any of the links below.`,
       theme: { preset: 'cosmic-night' },
       portfolioPdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-      portfolioPdfName: 'Diesel_Vendor_Portfolio.pdf',
+      portfolioPdfName: 'DevTech_Vendor_Portfolio.pdf',
       tabs: [
         { id: '1', type: 'whatsapp', label: 'WhatsApp', value: '+15550100', iconName: 'MessageCircle', active: true },
-        { id: '2', type: 'instagram', label: 'Instagram', value: 'diesel_group', iconName: 'Instagram', active: true },
-        { id: '3', type: 'mail', label: 'Email', value: 'contact@diesel.com', iconName: 'Mail', active: true }
-      ]
+        { id: '2', type: 'instagram', label: 'Instagram', value: 'devtech_group', iconName: 'Instagram', active: true },
+        { id: '3', type: 'mail', label: 'Email', value: 'contact@devtech.com', iconName: 'Mail', active: true }
+      ],
+      job_title: 'Partner',
+      subscription_end_date: '',
+      language: 'en'
     };
 
     const success = await addVendor(newVendor);
@@ -258,7 +270,7 @@ export const AdminDashboard: React.FC = () => {
       if (order.phoneNumber) {
         setSimulatedNotification({
           phone: order.phoneNumber,
-          message: `Dear client, Diesel Connect has approved your profile registration for @${registeredUsername}! Our representative will call you shortly on this number to arrange delivery of your custom NFC Card. Thank you!`
+          message: `Dear client, DevTech Connect has approved your profile registration for @${registeredUsername}! Our representative will call you shortly on this number to arrange delivery of your custom NFC Card. Thank you!`
         });
       }
     } else {
@@ -301,9 +313,8 @@ export const AdminDashboard: React.FC = () => {
     setVendorTabs(prev => prev.filter(t => t.id !== id));
   };
 
-  // Helper to ensure all default standard tabs are present in form state
   const syncStandardTabs = () => {
-    const standardTypes: Tab['type'][] = ['whatsapp', 'instagram', 'facebook', 'mail', 'tiktok', 'maps', 'linkedin', 'website', 'telegram'];
+    const standardTypes: Tab['type'][] = ['whatsapp', 'instagram', 'facebook', 'mail', 'tiktok', 'maps', 'linkedin', 'website', 'telegram', 'instapay'];
     
     let currentTabs = [...vendorTabs];
     let updated = false;
@@ -314,7 +325,7 @@ export const AdminDashboard: React.FC = () => {
         currentTabs.push({
           id: `tab-${type}`,
           type: type,
-          label: type.charAt(0).toUpperCase() + type.slice(1),
+          label: type === 'instapay' ? 'InstaPay' : (type.charAt(0).toUpperCase() + type.slice(1)),
           value: '',
           iconName: 'Link',
           active: false
@@ -350,7 +361,7 @@ export const AdminDashboard: React.FC = () => {
             <div style={{ display: 'inline-flex', padding: '12px', background: 'rgba(99, 102, 241, 0.15)', borderRadius: '50%', color: 'var(--primary-color)', marginBottom: '1rem' }}>
               <Icons.Lock size={30} />
             </div>
-            <h2 style={{ fontSize: '1.7rem', fontFamily: 'var(--font-display)', marginBottom: '0.4rem' }}>Diesel Admin Panel</h2>
+            <h2 style={{ fontSize: '1.7rem', fontFamily: 'var(--font-display)', marginBottom: '0.4rem' }}>DevTech Admin Panel</h2>
             <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Secure administrative gate access authentication</p>
           </div>
 
@@ -411,8 +422,8 @@ export const AdminDashboard: React.FC = () => {
         height: '60px'
       }}>
         <div className="admin-logo" style={{ fontSize: '1.2rem' }}>
-          <Icons.ShieldAlert size={20} />
-          <span>Diesel Admin</span>
+          <img src="/logo.png" alt="DevTech" style={{ width: 26, height: 26, objectFit: 'contain', borderRadius: 4 }} />
+          <span>DevTech Admin</span>
         </div>
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -434,8 +445,8 @@ export const AdminDashboard: React.FC = () => {
       {/* Sidebar navigation */}
       <div className={`admin-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className="admin-logo">
-          <Icons.ShieldAlert size={24} />
-          <span>Diesel Admin</span>
+          <img src="/logo.png" alt="DevTech" style={{ width: 32, height: 32, objectFit: 'contain', borderRadius: 6 }} />
+          <span>DevTech Admin</span>
         </div>
         
         <div className="admin-nav">
@@ -763,12 +774,37 @@ export const AdminDashboard: React.FC = () => {
                     <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border-admin)', paddingTop: '1rem' }}>
                       <p style={{ fontSize: '0.8rem', color: 'var(--text-admin-secondary)', marginBottom: '0.75rem' }}>Existing Companies ({companies.length})</p>
                       {companies.map(c => (
-                        <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '0.85rem' }}>
-                          <div>
-                            <span style={{ color: '#f1f5f9', fontWeight: 600 }}>{c.company_name}</span>
-                            <span style={{ color: '#475569', marginLeft: '0.5rem' }}>@{c.username}</span>
+                        <div key={c.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '0.75rem 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '0.85rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <span style={{ color: '#f1f5f9', fontWeight: 600 }}>{c.company_name}</span>
+                              <span style={{ color: '#475569', marginLeft: '0.5rem' }}>@{c.username}</span>
+                            </div>
+                            <span style={{ fontSize: '0.72rem', color: '#475569' }}>{new Date(c.created_at).toLocaleDateString()}</span>
                           </div>
-                          <span style={{ fontSize: '0.72rem', color: '#475569' }}>{new Date(c.created_at).toLocaleDateString()}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                              Expiry: {c.subscription_end_date ? new Date(c.subscription_end_date).toLocaleDateString() : 'None'}
+                            </span>
+                            <input 
+                              type="date"
+                              defaultValue={c.subscription_end_date ? c.subscription_end_date.substring(0, 10) : ''}
+                              onChange={async (e) => {
+                                const newDate = e.target.value || null;
+                                const { error } = await supabase
+                                  .from('companies')
+                                  .update({ subscription_end_date: newDate })
+                                  .eq('id', c.id);
+                                if (!error) {
+                                  triggerAlert('success', `Updated subscription for ${c.company_name}`);
+                                  loadAccounts();
+                                } else {
+                                  triggerAlert('error', `Error updating: ${error.message}`);
+                                }
+                              }}
+                              style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -816,12 +852,37 @@ export const AdminDashboard: React.FC = () => {
                     <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border-admin)', paddingTop: '1rem' }}>
                       <p style={{ fontSize: '0.8rem', color: 'var(--text-admin-secondary)', marginBottom: '0.75rem' }}>Individual Accounts ({individualAccounts.length})</p>
                       {individualAccounts.map(a => (
-                        <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '0.85rem' }}>
-                          <div>
-                            <span style={{ color: '#f1f5f9', fontWeight: 600 }}>@{a.username}</span>
-                            <span style={{ color: '#818cf8', marginLeft: '0.5rem', fontSize: '0.78rem' }}>→ @{a.vendor_username}</span>
+                        <div key={a.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '0.75rem 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '0.85rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <span style={{ color: '#f1f5f9', fontWeight: 600 }}>@{a.username}</span>
+                              <span style={{ color: '#818cf8', marginLeft: '0.5rem', fontSize: '0.78rem' }}>→ @{a.vendor_username}</span>
+                            </div>
+                            <span style={{ fontSize: '0.72rem', color: '#475569' }}>{new Date(a.created_at).toLocaleDateString()}</span>
                           </div>
-                          <span style={{ fontSize: '0.72rem', color: '#475569' }}>{new Date(a.created_at).toLocaleDateString()}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                              Expiry: {a.subscription_end_date ? new Date(a.subscription_end_date).toLocaleDateString() : 'None'}
+                            </span>
+                            <input 
+                              type="date"
+                              defaultValue={a.subscription_end_date ? a.subscription_end_date.substring(0, 10) : ''}
+                              onChange={async (e) => {
+                                const newDate = e.target.value || null;
+                                const { error } = await supabase
+                                  .from('individual_accounts')
+                                  .update({ subscription_end_date: newDate })
+                                  .eq('id', a.id);
+                                if (!error) {
+                                  triggerAlert('success', `Updated subscription for @${a.username}`);
+                                  loadAccounts();
+                                } else {
+                                  triggerAlert('error', `Error updating: ${error.message}`);
+                                }
+                              }}
+                              style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1058,6 +1119,30 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                     </div>
 
+                    <div className="admin-grid-2" style={{ marginBottom: '1rem' }}>
+                      <div className="input-group">
+                        <label className="input-label">Job Title</label>
+                        <input 
+                          type="text" 
+                          placeholder="E.g., Software Engineer"
+                          value={vendorJobTitle}
+                          onChange={(e) => setVendorJobTitle(e.target.value)}
+                          className="input-field"
+                        />
+                      </div>
+                      <div className="input-group">
+                        <label className="input-label">Language Preference</label>
+                        <select 
+                          value={vendorLanguage}
+                          onChange={(e) => setVendorLanguage(e.target.value as 'en' | 'ar')}
+                          className="input-field"
+                        >
+                          <option value="en">English (en)</option>
+                          <option value="ar">Arabic (ar)</option>
+                        </select>
+                      </div>
+                    </div>
+
                     <div className="input-group">
                       <label className="input-label">Bio Details</label>
                       <textarea 
@@ -1071,14 +1156,54 @@ export const AdminDashboard: React.FC = () => {
 
                     <div className="admin-grid-2">
                       <div className="input-group">
-                        <label className="input-label">Portfolio PDF URL</label>
-                        <input 
-                          type="text" 
-                          placeholder="https://example.com/file.pdf"
-                          value={vendorPdfUrl}
-                          onChange={(e) => setVendorPdfUrl(e.target.value)}
-                          className="input-field"
-                        />
+                        <label className="input-label">Portfolio PDF (URL or Local Upload)</label>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <input 
+                            type="text" 
+                            placeholder="https://example.com/file.pdf"
+                            value={vendorPdfUrl}
+                            onChange={(e) => setVendorPdfUrl(e.target.value)}
+                            className="input-field"
+                            style={{ flexGrow: 1 }}
+                          />
+                          <label 
+                            className="admin-btn admin-btn-secondary" 
+                            style={{ 
+                              padding: '0.8rem 1rem', 
+                              cursor: 'pointer', 
+                              margin: 0, 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '6px',
+                              fontSize: '0.85rem'
+                            }}
+                          >
+                            <Icons.Upload size={14} />
+                            <span>Upload</span>
+                            <input 
+                              type="file" 
+                              accept="application/pdf" 
+                              style={{ display: 'none' }}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  if (file.size > 5 * 1024 * 1024) {
+                                    triggerAlert('error', 'PDF size must be less than 5MB.');
+                                    return;
+                                  }
+                                  const reader = new FileReader();
+                                  reader.onload = (event) => {
+                                    const base64 = event.target?.result as string;
+                                    setVendorPdfUrl(base64);
+                                    setVendorPdfName(file.name);
+                                    triggerAlert('success', 'PDF uploaded successfully!');
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
                       </div>
                       <div className="input-group">
                         <label className="input-label">Portfolio Label / Filename</label>
@@ -1090,6 +1215,16 @@ export const AdminDashboard: React.FC = () => {
                           className="input-field"
                         />
                       </div>
+                    </div>
+
+                    <div className="input-group" style={{ marginBottom: '1.25rem' }}>
+                      <label className="input-label">Subscription Expiry Date</label>
+                      <input 
+                        type="date" 
+                        value={vendorSubscriptionEndDate}
+                        onChange={(e) => setVendorSubscriptionEndDate(e.target.value)}
+                        className="input-field"
+                      />
                     </div>
 
                     <div className="admin-grid-2" style={{ marginTop: '1.25rem' }}>

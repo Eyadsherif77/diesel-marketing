@@ -11,9 +11,9 @@ export function generateVCF(vendor: {
   const lines = [
     'BEGIN:VCARD',
     'VERSION:3.0',
-    `FN:${vendor.name}`,
-    `N:${vendor.name.split(' ').slice(1).join(' ')};${vendor.name.split(' ')[0]};;;`,
-    `ORG:${vendor.companyName}`,
+    `FN;CHARSET=UTF-8:${vendor.name}`,
+    `N;CHARSET=UTF-8:${vendor.name.split(' ').slice(1).join(' ')};${vendor.name.split(' ')[0]};;;`,
+    `ORG;CHARSET=UTF-8:${vendor.companyName}`,
   ];
 
   if (vendor.phone_number) {
@@ -25,11 +25,11 @@ export function generateVCF(vendor: {
   if (vendor.website) {
     lines.push(`URL:${vendor.website}`);
   }
-  lines.push(`URL;TYPE=PROFILE:${profileUrl}`);
+  lines.push(`URL;TYPE=PROFILE;CHARSET=UTF-8:${profileUrl}`);
   lines.push('END:VCARD');
 
   const vcfContent = lines.join('\r\n');
-  const blob = new Blob([vcfContent], { type: 'text/vcard;charset=utf-8' });
+  const blob = new Blob(['\ufeff', vcfContent], { type: 'text/vcard;charset=utf-8' });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement('a');

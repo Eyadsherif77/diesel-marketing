@@ -149,7 +149,7 @@ export const BuyCard: React.FC = () => {
           </h2>
           
           <p style={{ opacity: 0.9, lineHeight: '1.6', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-            Thank you! Someone from the Diesel team will call your registered number soon to confirm. Your custom <strong>Diesel NFC Card</strong> is being processed.
+            Thank you! Someone from the DevTech team will call your registered number soon to confirm. Your custom <strong>DevTech NFC Card</strong> is being processed.
           </p>
 
           <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', marginBottom: '2rem', textAlign: 'left', fontSize: '0.85rem' }}>
@@ -224,14 +224,14 @@ export const BuyCard: React.FC = () => {
               <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '0.95rem' }}>@</span>
               <input 
                 type="text" 
-                placeholder="alex-diesel"
+                placeholder="alex-devtech"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="input-field"
                 style={{ paddingLeft: '2.1rem' }}
               />
             </div>
-            <p style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.35rem' }}>E.g. diesel.com/#/your-username</p>
+            <p style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.35rem' }}>E.g. devtech.com/#/your-username</p>
           </div>
 
           <div className="input-group">

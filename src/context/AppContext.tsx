@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 
 export interface Tab {
   id: string;
-  type: 'whatsapp' | 'instagram' | 'facebook' | 'mail' | 'tiktok' | 'maps' | 'linkedin' | 'website' | 'telegram' | 'phone' | 'custom';
+  type: 'whatsapp' | 'instagram' | 'facebook' | 'mail' | 'tiktok' | 'maps' | 'linkedin' | 'website' | 'telegram' | 'phone' | 'instapay' | 'custom';
   label: string;
   value: string;
   iconName: string;
@@ -36,6 +36,11 @@ export interface Vendor {
   website?: string;
   // Company relationship
   company_id?: string;
+  // Added fields
+  job_title?: string;
+  subscription_end_date?: string;
+  analytics_reset_at?: string;
+  language?: 'en' | 'ar';
 }
 
 export interface CardOrder {
@@ -66,6 +71,10 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 // ─── Supabase row → Vendor ────────────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rowToVendor(row: any): Vendor {
+  const resolvedSubExpiry = (row.company_id && row.companies?.subscription_end_date)
+    ? row.companies.subscription_end_date
+    : (row.subscription_end_date ?? '');
+
   return {
     username: row.username,
     name: row.name,
@@ -80,6 +89,10 @@ function rowToVendor(row: any): Vendor {
     email: row.email ?? '',
     website: row.website ?? '',
     company_id: row.company_id ?? undefined,
+    job_title: row.job_title ?? '',
+    subscription_end_date: resolvedSubExpiry,
+    analytics_reset_at: row.analytics_reset_at ?? '',
+    language: (row.language === 'ar' ? 'ar' : 'en') as 'en' | 'ar',
   };
 }
 
@@ -99,6 +112,10 @@ function vendorToRow(vendor: Vendor) {
     email: vendor.email ?? null,
     website: vendor.website ?? null,
     company_id: vendor.company_id ?? null,
+    job_title: vendor.job_title ?? null,
+    subscription_end_date: vendor.subscription_end_date ?? null,
+    analytics_reset_at: vendor.analytics_reset_at ?? null,
+    language: vendor.language ?? 'en',
   };
 }
 
@@ -110,13 +127,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [vendorsLoading, setVendorsLoading] = useState(true);
 
   const [orders, setOrders] = useState<CardOrder[]>(() => {
-    const saved = localStorage.getItem('diesel_orders');
+    const saved = localStorage.getItem('devtech_orders');
     return saved ? JSON.parse(saved) : INITIAL_ORDERS;
   });
 
   // ── Persist orders to localStorage (unchanged) ─────────────────────────────
   useEffect(() => {
-    localStorage.setItem('diesel_orders', JSON.stringify(orders));
+    localStorage.setItem('devtech_orders', JSON.stringify(orders));
   }, [orders]);
 
   // ── Load vendors from Supabase on mount — NO seeding ──────────────────────
@@ -126,7 +143,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const { data, error } = await supabase
         .from('vendors')
-        .select('*')
+        .select('*, companies(subscription_end_date)')
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -152,7 +169,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const { data, error } = await supabase
       .from('vendors')
       .insert(vendorToRow(vendor))
-      .select()
+      .select('*, companies(subscription_end_date)')
       .single();
 
     if (error) {
@@ -165,19 +182,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateVendor = async (username: string, updatedVendor: Vendor): Promise<void> => {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('vendors')
       .update(vendorToRow(updatedVendor))
-      .eq('username', username);
+      .eq('username', username)
+      .select('*, companies(subscription_end_date)')
+      .single();
 
     if (error) {
       console.error('[Supabase] Failed to update vendor:', error.message);
       return;
     }
 
-    setVendors((prev) =>
-      prev.map((v) => (v.username === username ? updatedVendor : v))
-    );
+    if (data) {
+      setVendors((prev) =>
+        prev.map((v) => (v.username === username ? rowToVendor(data) : v))
+      );
+    }
   };
 
   const deleteVendor = async (username: string): Promise<void> => {
@@ -283,8 +304,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     initialTabs.push({
       id: String(tabIdCounter++),
       type: 'website',
-      label: 'Diesel Website',
-      value: 'https://diesel.com',
+      label: 'DevTech Website',
+      value: 'https://devtech.com',
       iconName: 'Globe',
       active: true,
     });
@@ -292,7 +313,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newVendor: Vendor = {
       username: usernameClean,
       name: nameClean,
-      companyName: 'Diesel',
+      companyName: 'DevTech',
       avatarUrl:
         'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=250&q=80',
       bio: `Professional partner specializing in custom brand strategy. Registered from card purchase order.`,
@@ -300,7 +321,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       tabs: initialTabs,
       portfolioPdfUrl:
         'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-      portfolioPdfName: 'Brand_Introduction.pdf',
+      portfolioPdfName: 'DevTech_Vendor_Portfolio.pdf',
+      job_title: 'Partner',
+      subscription_end_date: '',
+      analytics_reset_at: '',
+      language: 'en',
     };
 
     const success = await addVendor(newVendor);
