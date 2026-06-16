@@ -58,7 +58,7 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  const loadData = useCallback(async (companyId: string) => {
+  const loadData = useCallback(async (companyId: string, currentStatView: 'current' | 'lifetime', currentChartRange: number) => {
     setLoading(true);
     try {
       // Fetch latest subscription & reset info
@@ -89,7 +89,8 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
       setCompanyVendors(myVendors);
 
       if (myVendors.length > 0) {
-        const sinceFilter = (statView === 'current' && resetTs) ? resetTs : undefined;
+        // Always use current period filter for 'current' view (since reset), no filter for 'lifetime'
+        const sinceFilter = (currentStatView === 'current' && resetTs) ? resetTs : undefined;
         const sums = await fetchMultiVendorSummary(myVendors.map(v => v.username), sinceFilter);
         setSummaries(sums);
 
@@ -99,14 +100,14 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
 
         setSelectedVendor(currentSel);
 
-        const daily = await fetchDailyAnalytics(currentSel, chartRange, sinceFilter);
+        const daily = await fetchDailyAnalytics(currentSel, currentChartRange, sinceFilter);
         setVendorDaily(daily);
       }
     } catch (err) {
       console.error('Failed to load company dashboard data:', err);
     }
     setLoading(false);
-  }, [vendors, selectedVendor, chartRange, statView]);
+  }, [vendors, selectedVendor]);
 
   useEffect(() => {
     const raw = sessionStorage.getItem('devtech_company_session');
@@ -120,8 +121,16 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
   }, [companyUsername]);
 
   useEffect(() => {
-    if (session && vendors.length > 0) loadData(session.companyId);
+    if (session && vendors.length > 0) loadData(session.companyId, statView, chartRange);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, vendors.length, loadData]);
+
+  // Reload chart/summaries when statView or chartRange changes
+  useEffect(() => {
+    if (!session) return;
+    loadData(session.companyId, statView, chartRange);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statView, chartRange]);
 
   const loadVendorChart = async (username: string) => {
     setSelectedVendor(username);
@@ -141,7 +150,8 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
       
       if (!error) {
         setResetTimestamp(now);
-        loadData(session.companyId);
+        setStatView('current'); // Switch to current period view after reset
+        loadData(session.companyId, 'current', chartRange);
       } else {
         alert('Failed to reset analytics. Please try again.');
       }

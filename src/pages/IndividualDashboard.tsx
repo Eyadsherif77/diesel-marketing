@@ -65,10 +65,11 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  const loadData = useCallback(async (userLoginName: string) => {
+  // Load subscription info + BOTH summaries + chart data
+  const loadData = useCallback(async (userLoginName: string, currentStatView: 'current' | 'lifetime', currentChartRange: number) => {
     setLoading(true);
     try {
-      // Fetch latest subscription & reset info
+      // Fetch latest subscription & reset info from individual_accounts
       const { data: accData } = await supabase
         .from('individual_accounts')
         .select('subscription_end_date, analytics_reset_at')
@@ -85,11 +86,14 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
         setResetTimestamp(resetTs);
       }
 
-      // Fetch summaries using respective since filters
+      // Always fetch BOTH lifetime (no filter) AND current period (since resetTs)
+      const sinceFilter = resetTs || undefined; // undefined = no filter = all time
+      const chartSince = (currentStatView === 'current' && resetTs) ? resetTs : undefined;
+
       const [sumLifetime, sumCurrent, day] = await Promise.all([
-        fetchAnalyticsSummary(vendorUsername),
-        fetchAnalyticsSummary(vendorUsername, resetTs || undefined),
-        fetchDailyAnalytics(vendorUsername, chartRange, (statView === 'current' && resetTs) ? resetTs : undefined),
+        fetchAnalyticsSummary(vendorUsername),                    // lifetime: no since filter
+        fetchAnalyticsSummary(vendorUsername, sinceFilter),       // current: from reset date
+        fetchDailyAnalytics(vendorUsername, currentChartRange, chartSince),
       ]);
 
       setLifetimeSummary(sumLifetime);
@@ -99,7 +103,7 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
       console.error('Failed to load dashboard statistics:', err);
     }
     setLoading(false);
-  }, [vendorUsername, chartRange, statView]);
+  }, [vendorUsername]);
 
   useEffect(() => {
     const raw = sessionStorage.getItem('devtech_individual_session');
@@ -114,9 +118,18 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
 
   useEffect(() => { 
     if (session) {
-      loadData(session.username);
+      loadData(session.username, statView, chartRange);
     } 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, loadData]);
+
+  // Reload chart data when statView or chartRange changes (without refetching subscription)
+  useEffect(() => {
+    if (!session) return;
+    const chartSince = (statView === 'current' && resetTimestamp) ? resetTimestamp : undefined;
+    fetchDailyAnalytics(vendorUsername, chartRange, chartSince).then(setDaily);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statView, chartRange]);
 
   const handleLogout = () => {
     sessionStorage.removeItem('devtech_individual_session');
@@ -134,7 +147,16 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
       
       if (!error) {
         setResetTimestamp(now);
-        loadData(session.username);
+        // Reload both summaries with the new reset timestamp
+        const [sumLifetime, sumCurrent, day] = await Promise.all([
+          fetchAnalyticsSummary(vendorUsername),
+          fetchAnalyticsSummary(vendorUsername, now),
+          fetchDailyAnalytics(vendorUsername, chartRange, statView === 'current' ? now : undefined),
+        ]);
+        setLifetimeSummary(sumLifetime);
+        setCurrentSummary(sumCurrent);
+        setDaily(day);
+        setStatView('current'); // Switch to current period view after reset
       } else {
         alert('Failed to reset analytics. Please try again.');
       }

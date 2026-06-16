@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as Icons from 'lucide-react';
 import '../ThemeStyles.css';
@@ -103,10 +103,13 @@ interface VendorProfileProps {
 export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
   const { vendors } = useApp();
   const vendor = vendors.find(v => v.username.toLowerCase() === username.toLowerCase());
-  if (vendor) {
-    console.log('[VendorProfile] Vendor language:', vendor.language);
-  }
+  // Client-side language override (does not require Supabase save)
+  const [langOverride, setLangOverride] = useState<'en' | 'ar' | null>(null);
   const trackedRef = useRef(false);
+
+  // Effective language: user toggle > vendor default > 'en'
+  const effectiveLang: 'en' | 'ar' = langOverride ?? (vendor?.language ?? 'en');
+  const isAr = effectiveLang === 'ar';
 
   // ─── Track profile view / QR scan once per mount ─────────────────────────
   useEffect(() => {
@@ -152,7 +155,6 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
   })();
 
   if (isExpired) {
-    const isArabic = vendor.language === 'ar';
     return (
       <div className="buy-page-container">
         <div className="buy-card-box animate-fade-in" style={{ textAlign: 'center', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)' }}>
@@ -160,16 +162,16 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
             <Icons.AlertOctagon size={36} />
           </div>
           <h2 style={{ fontSize: '1.6rem', marginBottom: '0.75rem', fontFamily: 'var(--font-display)', color: '#fff' }}>
-            {isArabic ? 'الحساب غير نشط حالياً' : 'Profile Temporarily Inactive'}
+            {isAr ? 'الحساب غير نشط حالياً' : 'Profile Temporarily Inactive'}
           </h2>
           <p style={{ opacity: 0.8, marginBottom: '2rem', fontSize: '0.92rem', color: '#cbd5e1', lineHeight: '1.6' }}>
-            {isArabic 
+            {isAr
               ? `الملف الشخصي لـ @${vendor.username} غير نشط حالياً بسبب انتهاء صلاحية الاشتراك. يرجى التواصل مع صاحب الملف أو الدعم الفني لإعادة تفعيله.`
               : `The profile for @${vendor.username} is temporarily inactive due to subscription expiry. Please contact the owner or administrator to renew.`}
           </p>
           <a href="#/" className="submit-btn" style={{ textDecoration: 'none', background: 'linear-gradient(135deg, #475569, #1e293b)' }}>
             <Icons.Home size={16} />
-            {isArabic ? 'العودة للرئيسية' : 'Back to Home'}
+            {isAr ? 'العودة للرئيسية' : 'Back to Home'}
           </a>
         </div>
       </div>
@@ -216,7 +218,31 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
   };
 
   return (
-    <div className={`vendor-profile-wrapper ${themeClass}`} style={wrapperStyles} dir={vendor.language === 'ar' ? 'rtl' : 'ltr'}>
+    <div className={`vendor-profile-wrapper ${themeClass}`} style={wrapperStyles} dir={isAr ? 'rtl' : 'ltr'}>
+      {/* Language Toggle Button — positioned in wrapper to avoid profile-card overflow:hidden clipping */}
+      <div style={{ position: 'fixed', top: '1.25rem', right: isAr ? 'auto' : '1.25rem', left: isAr ? '1.25rem' : 'auto', zIndex: 100 }}>
+        <button
+          onClick={() => setLangOverride(isAr ? 'en' : 'ar')}
+          style={{
+            padding: '0.35rem 0.9rem',
+            background: 'rgba(0,0,0,0.35)',
+            border: '1px solid rgba(255,255,255,0.25)',
+            borderRadius: '50px',
+            color: '#fff',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            letterSpacing: '0.04em',
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          }}
+          aria-label={isAr ? 'Switch to English' : 'التبديل إلى العربية'}
+        >
+          {isAr ? 'EN' : 'عربي'}
+        </button>
+      </div>
+
       <div className="profile-card animate-fade-in">
 
         {/* Company Badge */}
@@ -234,11 +260,13 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
           </div>
         </div>
 
-        {/* Name & Job Title */}
+        {/* Name & Job Title — no @username, no empty fallback */}
         <h1 className="profile-name">{vendor.name}</h1>
-        <span className="profile-job-title" style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, opacity: 0.8, marginTop: '2px', marginBottom: '12px' }}>
-          {vendor.job_title || (vendor.language === 'ar' ? 'شريك مهني' : 'Professional Partner')}
-        </span>
+        {vendor.job_title && vendor.job_title.trim() && (
+          <span className="profile-job-title" style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, opacity: 0.8, marginTop: '2px', marginBottom: '12px' }}>
+            {vendor.job_title.trim()}
+          </span>
+        )}
 
         <p className="profile-bio">{vendor.bio}</p>
 
@@ -248,20 +276,20 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
             <button
               className="profile-action-btn profile-vcf-btn"
               onClick={handleVCFClick}
-              aria-label={vendor.language === 'ar' ? 'حفظ جهة الاتصال' : 'Save Contact'}
+              aria-label={isAr ? 'حفظ جهة الاتصال' : 'Save Contact'}
             >
               <Icons.UserPlus size={16} />
-              {vendor.language === 'ar' ? 'حفظ جهة الاتصال' : 'Save Contact'}
+              {isAr ? 'حفظ جهة الاتصال' : 'Save Contact'}
             </button>
             {vendor.phone_number && (
               <a
                 href={`tel:${vendor.phone_number}`}
                 className="profile-action-btn profile-phone-btn"
                 onClick={() => trackEvent(vendor.username, 'phone_click')}
-                aria-label={vendor.language === 'ar' ? 'اتصل' : 'Call'}
+                aria-label={isAr ? 'اتصل' : 'Call'}
               >
                 <Icons.Phone size={16} />
-                {vendor.language === 'ar' ? 'اتصل' : 'Call'}
+                {isAr ? 'اتصل' : 'Call'}
               </a>
             )}
           </div>
@@ -316,8 +344,8 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
                 <Icons.FileText size={22} />
               </div>
               <div>
-                <div className="portfolio-title">{vendor.portfolioPdfName || (vendor.language === 'ar' ? 'ملف الأعمال' : 'Business Portfolio')}</div>
-                <div className="portfolio-subtitle">{vendor.language === 'ar' ? 'مستند PDF' : 'PDF Document'}</div>
+                <div className="portfolio-title">{vendor.portfolioPdfName || (isAr ? 'ملف الأعمال' : 'Business Portfolio')}</div>
+                <div className="portfolio-subtitle">{isAr ? 'مستند PDF' : 'PDF Document'}</div>
               </div>
             </div>
             <a
@@ -328,18 +356,18 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
               onClick={handlePdfClick}
             >
               <Icons.Download size={14} />
-              {vendor.language === 'ar' ? 'عرض' : 'View'}
+              {isAr ? 'عرض' : 'View'}
             </a>
           </div>
         )}
 
         {/* Buy Card Banner */}
         <div className="buy-card-banner" onClick={() => window.location.hash = `#/buy?ref=${vendor.username}`}>
-          <h4>{vendor.language === 'ar' ? 'احصل على بطاقتك الرقمية' : 'Get Your Digital Business Card'}</h4>
-          <p>{vendor.language === 'ar' ? 'انقر هنا لطلب بطاقة NFC مخصصة خاصة بك.' : 'Scan this profile or click below to order a custom NFC smart card.'}</p>
+          <h4>{isAr ? 'احصل على بطاقتك الرقمية' : 'Get Your Digital Business Card'}</h4>
+          <p>{isAr ? 'انقر هنا لطلب بطاقة NFC مخصصة خاصة بك.' : 'Scan this profile or click below to order a custom NFC smart card.'}</p>
           <button className="buy-card-btn">
             <Icons.CreditCard size={14} />
-            {vendor.language === 'ar' ? 'اطلب البطاقة الآن' : 'Order Card Now'}
+            {isAr ? 'اطلب البطاقة الآن' : 'Order Card Now'}
           </button>
         </div>
 
