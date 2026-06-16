@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import * as Icons from 'lucide-react';
 import '../ThemeStyles.css';
@@ -103,12 +103,10 @@ interface VendorProfileProps {
 export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
   const { vendors } = useApp();
   const vendor = vendors.find(v => v.username.toLowerCase() === username.toLowerCase());
-  // Client-side language override (does not require Supabase save)
-  const [langOverride, setLangOverride] = useState<'en' | 'ar' | null>(null);
   const trackedRef = useRef(false);
 
-  // Effective language: user toggle > vendor default > 'en'
-  const effectiveLang: 'en' | 'ar' = langOverride ?? (vendor?.language ?? 'en');
+  // Effective language: vendor default > 'en'
+  const effectiveLang: 'en' | 'ar' = vendor?.language ?? 'en';
   const isAr = effectiveLang === 'ar';
 
   // ─── Track profile view / QR scan once per mount ─────────────────────────
@@ -219,29 +217,6 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
 
   return (
     <div className={`vendor-profile-wrapper ${themeClass}`} style={wrapperStyles} dir={isAr ? 'rtl' : 'ltr'}>
-      {/* Language Toggle Button — positioned in wrapper to avoid profile-card overflow:hidden clipping */}
-      <div style={{ position: 'fixed', top: '1.25rem', right: isAr ? 'auto' : '1.25rem', left: isAr ? '1.25rem' : 'auto', zIndex: 100 }}>
-        <button
-          onClick={() => setLangOverride(isAr ? 'en' : 'ar')}
-          style={{
-            padding: '0.35rem 0.9rem',
-            background: 'rgba(0,0,0,0.35)',
-            border: '1px solid rgba(255,255,255,0.25)',
-            borderRadius: '50px',
-            color: '#fff',
-            fontSize: '0.78rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            letterSpacing: '0.04em',
-            backdropFilter: 'blur(8px)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-          }}
-          aria-label={isAr ? 'Switch to English' : 'التبديل إلى العربية'}
-        >
-          {isAr ? 'EN' : 'عربي'}
-        </button>
-      </div>
 
       <div className="profile-card animate-fade-in">
 

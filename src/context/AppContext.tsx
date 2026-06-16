@@ -71,9 +71,15 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 // ─── Supabase row → Vendor ────────────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rowToVendor(row: any): Vendor {
+  const individualSubExpiry = Array.isArray(row.individual_accounts)
+    ? row.individual_accounts[0]?.subscription_end_date
+    : row.individual_accounts?.subscription_end_date;
+
   const resolvedSubExpiry = (row.company_id && row.companies?.subscription_end_date)
     ? row.companies.subscription_end_date
-    : (row.subscription_end_date ?? '');
+    : (individualSubExpiry 
+        ? individualSubExpiry 
+        : (row.subscription_end_date ?? ''));
 
   return {
     username: row.username,
@@ -113,8 +119,8 @@ function vendorToRow(vendor: Vendor) {
     website: vendor.website ?? null,
     company_id: vendor.company_id ?? null,
     job_title: vendor.job_title ?? null,
-    subscription_end_date: vendor.subscription_end_date ?? null,
-    analytics_reset_at: vendor.analytics_reset_at ?? null,
+    subscription_end_date: vendor.subscription_end_date || null,
+    analytics_reset_at: vendor.analytics_reset_at || null,
     language: vendor.language ?? 'en',
   };
 }
@@ -143,7 +149,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const { data, error } = await supabase
         .from('vendors')
-        .select('*, companies(subscription_end_date)')
+        .select('*, companies(subscription_end_date), individual_accounts(subscription_end_date)')
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -167,10 +173,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (exists) return false;
 
     const { data, error } = await supabase
-      .from('vendors')
-      .insert(vendorToRow(vendor))
-      .select('*, companies(subscription_end_date)')
-      .single();
+        .from('vendors')
+        .insert(vendorToRow(vendor))
+        .select('*, companies(subscription_end_date), individual_accounts(subscription_end_date)')
+        .single();
 
     if (error) {
       console.error('[Supabase] Failed to add vendor:', error.message);
@@ -186,7 +192,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       .from('vendors')
       .update(vendorToRow(updatedVendor))
       .eq('username', username)
-      .select('*, companies(subscription_end_date)')
+      .select('*, companies(subscription_end_date), individual_accounts(subscription_end_date)')
       .single();
 
     if (error) {
