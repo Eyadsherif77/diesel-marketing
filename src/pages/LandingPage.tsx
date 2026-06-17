@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as Icons from 'lucide-react';
 import '../styles/landing.css';
+import { CONTACT } from '../lib/contactConfig';
 
 const SERVICES = [
   {
@@ -489,18 +490,58 @@ export const LandingPage: React.FC = () => {
                 We'd love to hear from you. Expect a reply within 24 hours.
               </p>
               <div className="lp-contact-details">
-                {[
-                  { icon: 'Mail', label: 'hello@devtech-nfc.com' },
-                  { icon: 'Phone', label: '+20 100 000 0000' },
-                  { icon: 'MapPin', label: 'Cairo, Egypt' },
-                ].map((c, i) => (
-                  <div key={i} className="lp-contact-detail">
-                    <div className="lp-contact-detail-icon">
-                      <DynIcon name={c.icon} size={18} />
-                    </div>
-                    <span>{c.label}</span>
+                {/* Email */}
+                <div className="lp-contact-detail">
+                  <div className="lp-contact-detail-icon">
+                    <Icons.Mail size={18} />
                   </div>
-                ))}
+                  <a
+                    href={`mailto:${CONTACT.email}`}
+                    style={{ color: 'inherit', textDecoration: 'none' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#7660F1')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'inherit')}
+                  >
+                    {CONTACT.email}
+                  </a>
+                </div>
+
+                {/* Phone 1 */}
+                <div className="lp-contact-detail">
+                  <div className="lp-contact-detail-icon">
+                    <Icons.Phone size={18} />
+                  </div>
+                  <a
+                    href={`tel:${CONTACT.phone1}`}
+                    style={{ color: 'inherit', textDecoration: 'none' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#7660F1')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'inherit')}
+                  >
+                    {CONTACT.phone1Display}
+                  </a>
+                </div>
+
+                {/* Phone 2 */}
+                <div className="lp-contact-detail">
+                  <div className="lp-contact-detail-icon">
+                    <Icons.Phone size={18} />
+                  </div>
+                  <a
+                    href={`tel:${CONTACT.phone2}`}
+                    style={{ color: 'inherit', textDecoration: 'none' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#7660F1')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'inherit')}
+                  >
+                    {CONTACT.phone2Display}
+                  </a>
+                </div>
+
+                {/* Location */}
+                <div className="lp-contact-detail">
+                  <div className="lp-contact-detail-icon">
+                    <Icons.MapPin size={18} />
+                  </div>
+                  <span>{CONTACT.location}</span>
+                </div>
               </div>
             </div>
 
