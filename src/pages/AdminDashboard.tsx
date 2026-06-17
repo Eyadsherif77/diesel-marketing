@@ -533,7 +533,7 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'vendors' ? (
+        {activeTab === 'vendors' && (
           <div>
             <div className="admin-header" style={{ marginBottom: '1.5rem' }}>
               <div>
@@ -630,7 +630,10 @@ export const AdminDashboard: React.FC = () => {
               )}
             </div>
           </div>
-        ) : (
+        )}
+
+        {/* ─── Card Purchase Orders Tab ─────────────────────────────────────── */}
+        {activeTab === 'orders' && (
           <div>
             <div className="admin-header">
               <div>
@@ -683,7 +686,7 @@ export const AdminDashboard: React.FC = () => {
                             >
                               <option value="pending">⏳ Pending Approval</option>
                               <option value="contacted">📞 Contacted Client</option>
-                              <option value="completed">✅ Approved & Registered</option>
+                              <option value="completed">✅ Approved &amp; Registered</option>
                             </select>
                           </td>
                           <td style={{ textAlign: 'right' }}>
@@ -695,12 +698,12 @@ export const AdminDashboard: React.FC = () => {
                                   onClick={() => handleApproveOrder(order.id, order)}
                                 >
                                   <Icons.UserCheck size={14} />
-                                  Approve & Register
+                                  Approve &amp; Register
                                 </button>
                               )}
                               <button 
                                 className="admin-btn admin-btn-danger" 
-                                style={{ padding: '0.45,rem', borderRadius: '8px', paddingInline: '8px' }}
+                                style={{ padding: '0.45rem', borderRadius: '8px', paddingInline: '8px' }}
                                 onClick={() => {
                                   if (confirm('Delete this card order?')) deleteOrder(order.id);
                                 }}
@@ -718,6 +721,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
         )}
+
 
         {/* ─── Accounts Management Tab ──────────────────────────────────────── */}
         {activeTab === 'accounts' && (

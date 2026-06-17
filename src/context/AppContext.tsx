@@ -60,7 +60,7 @@ interface AppContextType {
   addVendor: (vendor: Vendor) => Promise<boolean>;
   updateVendor: (username: string, updatedVendor: Vendor) => Promise<void>;
   deleteVendor: (username: string) => Promise<void>;
-  addOrder: (order: Omit<CardOrder, 'id' | 'date' | 'status'>) => void;
+  addOrder: (order: Omit<CardOrder, 'id' | 'date' | 'status'>) => Promise<boolean>;
   updateOrderStatus: (id: string, status: CardOrder['status']) => void;
   deleteOrder: (id: string) => void;
   approveOrder: (id: string) => Promise<string | null>;
@@ -125,22 +125,38 @@ function vendorToRow(vendor: Vendor) {
   };
 }
 
-// ─── Static orders (localStorage only) ───────────────────────────────────────
-const INITIAL_ORDERS: CardOrder[] = [];
-
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [vendorsLoading, setVendorsLoading] = useState(true);
 
-  const [orders, setOrders] = useState<CardOrder[]>(() => {
-    const saved = localStorage.getItem('devtech_orders');
-    return saved ? JSON.parse(saved) : INITIAL_ORDERS;
-  });
+  const [orders, setOrders] = useState<CardOrder[]>([]);
 
-  // ── Persist orders to localStorage (unchanged) ─────────────────────────────
+  // ── Load orders from Supabase on mount ────────────────────────────────────
   useEffect(() => {
-    localStorage.setItem('devtech_orders', JSON.stringify(orders));
-  }, [orders]);
+    const loadOrders = async () => {
+      const { data, error } = await supabase
+        .from('card_orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('[Supabase] Failed to load orders:', error.message);
+      } else if (data) {
+        setOrders(
+          data.map((row) => ({
+            id: row.id,
+            username: row.username ?? undefined,
+            email: row.email ?? undefined,
+            phoneNumber: row.phone_number ?? undefined,
+            referralVendor: row.referral_vendor ?? '',
+            date: row.created_at,
+            status: row.status as CardOrder['status'],
+          }))
+        );
+      }
+    };
+    loadOrders();
+  }, []);
 
   // ── Load vendors from Supabase on mount — NO seeding ──────────────────────
   useEffect(() => {
@@ -221,23 +237,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setVendors((prev) => prev.filter((v) => v.username !== username));
   };
 
-  // ── Order operations (localStorage — unchanged) ────────────────────────────
+  // ── Order operations (Supabase-backed) ───────────────────────────────────
 
-  const addOrder = (orderData: Omit<CardOrder, 'id' | 'date' | 'status'>) => {
+  const addOrder = async (
+    orderData: Omit<CardOrder, 'id' | 'date' | 'status'>
+  ): Promise<boolean> => {
+    const { data, error } = await supabase
+      .from('card_orders')
+      .insert({
+        username: orderData.username ?? null,
+        email: orderData.email ?? null,
+        phone_number: orderData.phoneNumber ?? null,
+        referral_vendor: orderData.referralVendor ?? '',
+        status: 'pending',
+      })
+      .select()
+      .single();
+
+    if (error || !data) {
+      console.error('[Supabase] Failed to save order:', error?.message);
+      return false;
+    }
+
     const newOrder: CardOrder = {
-      ...orderData,
-      id: `ord-${Math.random().toString(36).substr(2, 9)}`,
-      date: new Date().toISOString(),
-      status: 'pending',
+      id: data.id,
+      username: data.username ?? undefined,
+      email: data.email ?? undefined,
+      phoneNumber: data.phone_number ?? undefined,
+      referralVendor: data.referral_vendor ?? '',
+      date: data.created_at,
+      status: data.status as CardOrder['status'],
     };
     setOrders((prev) => [newOrder, ...prev]);
+    return true;
   };
 
-  const updateOrderStatus = (id: string, status: CardOrder['status']) => {
+  const updateOrderStatus = async (id: string, status: CardOrder['status']) => {
+    const { error } = await supabase
+      .from('card_orders')
+      .update({ status })
+      .eq('id', id);
+
+    if (error) {
+      console.error('[Supabase] Failed to update order status:', error.message);
+      return;
+    }
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
   };
 
-  const deleteOrder = (id: string) => {
+  const deleteOrder = async (id: string) => {
+    const { error } = await supabase
+      .from('card_orders')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('[Supabase] Failed to delete order:', error.message);
+      return;
+    }
     setOrders((prev) => prev.filter((o) => o.id !== id));
   };
 

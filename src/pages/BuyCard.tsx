@@ -41,6 +41,7 @@ export const BuyCard: React.FC = () => {
 
   const [referralVendor, setReferralVendor] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   // Extract referral from hash query parameters e.g., #/buy?ref=john-doe
@@ -89,7 +90,7 @@ export const BuyCard: React.FC = () => {
     setPhoneError(err);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -125,12 +126,19 @@ export const BuyCard: React.FC = () => {
           .replace(/[^a-z0-9-]/g, '')
       : undefined;
 
-    addOrder({
+    setIsSubmitting(true);
+    const saved = await addOrder({
       username: formattedUsername,
       email: email.trim() || undefined,
       phoneNumber: finalPhone || undefined,
       referralVendor: referralVendor.trim()
     });
+    setIsSubmitting(false);
+
+    if (!saved) {
+      setError('Order could not be saved. Please check your connection and try again.');
+      return;
+    }
 
     setIsSubmitted(true);
   };
@@ -381,9 +389,9 @@ export const BuyCard: React.FC = () => {
             </div>
           )}
 
-          <button type="submit" className="submit-btn" style={{ padding: '0.95rem' }}>
-            Submit Purchase Inquiry
-            <Icons.ArrowRight size={18} />
+          <button type="submit" className="submit-btn" style={{ padding: '0.95rem' }} disabled={isSubmitting}>
+            {isSubmitting ? 'Saving Order…' : 'Submit Purchase Inquiry'}
+            {!isSubmitting && <Icons.ArrowRight size={18} />}
           </button>
         </form>
 
