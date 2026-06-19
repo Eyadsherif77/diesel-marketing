@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as Icons from 'lucide-react';
 import '../styles/landing.css';
 import { CONTACT } from '../lib/contactConfig';
+import { supabase } from '../lib/supabase';
 
 const SERVICES = [
   {
@@ -108,6 +109,46 @@ export const LandingPage: React.FC = () => {
   const [nfcMenuOpen, setNfcMenuOpen] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const nfcRef = useRef<HTMLDivElement>(null);
+
+  // Lead Form Modal States
+  const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
+  const [leadForm, setLeadForm] = useState({ name: '', phone: '', email: '', company: '', message: '' });
+  const [leadSubmitting, setLeadSubmitting] = useState(false);
+  const [leadSuccess, setLeadSuccess] = useState(false);
+  const [leadError, setLeadError] = useState('');
+
+  const handleLeadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLeadSubmitting(true);
+    setLeadError('');
+    setLeadSuccess(false);
+
+    try {
+      const { error } = await supabase.from('lead_requests').insert({
+        name: leadForm.name,
+        phone: leadForm.phone,
+        email: leadForm.email,
+        company: leadForm.company || null,
+        message: leadForm.message || null,
+      });
+
+      if (error) {
+        setLeadError(error.message);
+      } else {
+        setLeadSuccess(true);
+        setLeadForm({ name: '', phone: '', email: '', company: '', message: '' });
+        // Close modal after a delay
+        setTimeout(() => {
+          setIsLeadModalOpen(false);
+          setLeadSuccess(false);
+        }, 2500);
+      }
+    } catch (err: any) {
+      setLeadError(err.message || 'An unexpected error occurred.');
+    } finally {
+      setLeadSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     const onScroll = () => {
@@ -330,10 +371,15 @@ export const LandingPage: React.FC = () => {
                 </div>
               ))}
             </div>
-            <a href="#/buy" className="lp-btn-primary" style={{ marginTop: '2rem', display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+            <button 
+              type="button"
+              onClick={() => setIsLeadModalOpen(true)}
+              className="lp-btn-primary" 
+              style={{ marginTop: '2rem', display: 'inline-flex', alignItems: 'center', gap: '8px', border: 'none', cursor: 'pointer' }}
+            >
               Get Started
               <Icons.ArrowRight size={16} />
-            </a>
+            </button>
           </div>
           <div className="lp-about-visual">
             <div className="lp-about-card">
@@ -618,6 +664,124 @@ export const LandingPage: React.FC = () => {
           <p className="lp-footer-copy">© {new Date().getFullYear()} DevTech. All rights reserved. Cairo, Egypt.</p>
         </div>
       </footer>
+
+      {isLeadModalOpen && (
+        <div className="modal-overlay" style={{ zIndex: 1000 }}>
+          <div className="modal-content" style={{ maxWidth: '500px', padding: '2rem', background: 'linear-gradient(135deg, #0e1322 0%, #161d30 100%)', border: '1px solid rgba(118,96,241,0.25)', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
+            <div className="modal-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ fontSize: '1.4rem', fontFamily: 'var(--font-display)', fontWeight: 800, background: 'linear-gradient(135deg, #7660F1, #06B6D4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>Get Started with DevTech</h3>
+                <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '4px 0 0' }}>Tell us about your project or card requirements</p>
+              </div>
+              <button type="button" className="modal-close-btn" onClick={() => { setIsLeadModalOpen(false); setLeadError(''); }} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.2s' }}>
+                <Icons.X size={20} />
+              </button>
+            </div>
+
+            {leadSuccess ? (
+              <div style={{ textAlign: 'center', padding: '2rem 0', animation: 'scaleUp 0.3s ease' }}>
+                <div style={{ display: 'inline-flex', padding: '16px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '50%', color: '#10b981', marginBottom: '1.5rem', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                  <Icons.CheckCircle size={44} />
+                </div>
+                <h4 style={{ fontSize: '1.25rem', color: '#fff', marginBottom: '0.5rem', fontFamily: 'var(--font-display)' }}>Request Submitted!</h4>
+                <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>Thank you. Our team will get back to you within 24 hours.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleLeadSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {leadError && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.75rem 1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '12px', color: '#f87171', fontSize: '0.82rem' }}>
+                    <Icons.AlertCircle size={16} />
+                    <span>{leadError}</span>
+                  </div>
+                )}
+
+                <div className="input-group" style={{ margin: 0 }}>
+                  <label className="input-label" style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Your Name *</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter your full name"
+                    value={leadForm.name}
+                    onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
+                    className="input-field"
+                    required
+                    style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', width: '100%', color: 'white', borderRadius: '10px' }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="input-group" style={{ margin: 0 }}>
+                    <label className="input-label" style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Phone Number *</label>
+                    <input 
+                      type="text" 
+                      placeholder="+201..."
+                      value={leadForm.phone}
+                      onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
+                      className="input-field"
+                      required
+                      style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', width: '100%', color: 'white', borderRadius: '10px' }}
+                    />
+                  </div>
+                  <div className="input-group" style={{ margin: 0 }}>
+                    <label className="input-label" style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Email Address *</label>
+                    <input 
+                      type="email" 
+                      placeholder="name@example.com"
+                      value={leadForm.email}
+                      onChange={(e) => setLeadForm(prev => ({ ...prev, email: e.target.value }))}
+                      className="input-field"
+                      required
+                      style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', width: '100%', color: 'white', borderRadius: '10px' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="input-group" style={{ margin: 0 }}>
+                  <label className="input-label" style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Company Name (Optional)</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter company name"
+                    value={leadForm.company}
+                    onChange={(e) => setLeadForm(prev => ({ ...prev, company: e.target.value }))}
+                    className="input-field"
+                    style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', width: '100%', color: 'white', borderRadius: '10px' }}
+                  />
+                </div>
+
+                <div className="input-group" style={{ margin: 0 }}>
+                  <label className="input-label" style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Message / Requirements (Optional)</label>
+                  <textarea 
+                    placeholder="Tell us what you need..."
+                    value={leadForm.message}
+                    onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
+                    className="input-field"
+                    rows={3}
+                    style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', width: '100%', color: 'white', borderRadius: '10px', resize: 'vertical' }}
+                  />
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="lp-btn-primary" 
+                  disabled={leadSubmitting}
+                  style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem', padding: '0.85rem' }}
+                >
+                  {leadSubmitting ? (
+                    <>
+                      <Icons.Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Icons.Send size={16} />
+                      <span>Submit Request</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

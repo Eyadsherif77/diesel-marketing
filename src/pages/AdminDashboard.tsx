@@ -10,10 +10,7 @@ import {
   fetchIndividualAccounts,
 } from '../lib/auth';
 
-const DYNAMIC_ICONS = [
-  'Link', 'Star', 'FileText', 'Calendar', 'Briefcase', 'Award', 'ShoppingBag', 
-  'MapPin', 'Phone', 'Mail', 'Users', 'Heart', 'Video', 'MessageCircle', 'Globe'
-];
+
 
 const PRESETS: { value: ThemeConfig['preset']; label: string; style: string }[] = [
   { value: 'cosmic-night', label: 'Cosmic Night', style: 'linear-gradient(135deg, #090a0f 0%, #121829 100%)' },
@@ -26,6 +23,63 @@ const PRESETS: { value: ThemeConfig['preset']; label: string; style: string }[] 
   { value: 'dark-glass', label: 'Dark Glass', style: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' },
   { value: 'custom', label: 'Custom Colors', style: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)' },
 ];
+
+const detectUrlDetails = (url: string): { label: string; iconName: string } => {
+  if (!url) return { label: 'Custom Link', iconName: 'Link' };
+  
+  const lowerUrl = url.toLowerCase().trim();
+  
+  if (lowerUrl.includes('instagram.com')) {
+    return { label: 'Instagram', iconName: 'Instagram' };
+  }
+  if (lowerUrl.includes('facebook.com') || lowerUrl.includes('fb.com')) {
+    return { label: 'Facebook', iconName: 'Facebook' };
+  }
+  if (lowerUrl.includes('linkedin.com')) {
+    return { label: 'LinkedIn', iconName: 'Linkedin' };
+  }
+  if (lowerUrl.includes('google.com/maps') || lowerUrl.includes('maps.google.com') || lowerUrl.includes('google.co.in/maps') || lowerUrl.includes('google.jo/maps') || lowerUrl.includes('goo.gl/maps') || lowerUrl.includes('maps.app.goo.gl')) {
+    return { label: 'Google Maps', iconName: 'MapPin' };
+  }
+  if (lowerUrl.includes('youtube.com') || lowerUrl.includes('youtu.be')) {
+    return { label: 'YouTube', iconName: 'Video' };
+  }
+  if (lowerUrl.includes('tiktok.com')) {
+    return { label: 'TikTok', iconName: 'Video' };
+  }
+  if (lowerUrl.includes('twitter.com') || lowerUrl.includes('x.com')) {
+    return { label: 'Twitter', iconName: 'Globe' };
+  }
+  
+  try {
+    let tempUrl = url.trim();
+    if (!/^https?:\/\//i.test(tempUrl)) {
+      tempUrl = 'https://' + tempUrl;
+    }
+    const parsed = new URL(tempUrl);
+    let hostname = parsed.hostname;
+    if (hostname.startsWith('www.')) {
+      hostname = hostname.substring(4);
+    }
+    const parts = hostname.split('.');
+    if (parts.length > 0) {
+      const name = parts[0];
+      const capitalized = name.charAt(0).toUpperCase() + name.slice(1);
+      return { label: capitalized, iconName: 'Globe' };
+    }
+  } catch (e) {
+    // Ignore and fallback
+  }
+
+  const match = url.match(/(?:https?:\/\/)?(?:www\.)?([^\/\s\.]+)/i);
+  if (match && match[1]) {
+    const name = match[1];
+    const capitalized = name.charAt(0).toUpperCase() + name.slice(1);
+    return { label: capitalized, iconName: 'Globe' };
+  }
+
+  return { label: 'Website', iconName: 'Globe' };
+};
 
 export const AdminDashboard: React.FC = () => {
   const { 
@@ -47,7 +101,7 @@ export const AdminDashboard: React.FC = () => {
   const [loginError, setLoginError] = useState('');
 
   // Dashboard state
-  const [activeTab, setActiveTab] = useState<'vendors' | 'orders' | 'accounts'>('vendors');
+  const [activeTab, setActiveTab] = useState<'vendors' | 'orders' | 'accounts' | 'leads'>('vendors');
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [activeFormTab, setActiveFormTab] = useState<'info' | 'theme' | 'tabs'>('info');
@@ -78,6 +132,11 @@ export const AdminDashboard: React.FC = () => {
   const [vendorJobTitle, setVendorJobTitle] = useState('');
   const [vendorSubscriptionEndDate, setVendorSubscriptionEndDate] = useState('');
   const [vendorLanguage, setVendorLanguage] = useState<'en' | 'ar'>('en');
+  const [vendorShowProfileUrl, setVendorShowProfileUrl] = useState(false);
+
+  // Lead Requests State
+  const [leads, setLeads] = useState<any[]>([]);
+  const [leadsLoading, setLeadsLoading] = useState(false);
 
   // Company & Individual Account Management
   const [companies, setCompanies] = useState<{ id: string; company_name: string; username: string; created_at: string; subscription_end_date?: string; analytics_reset_at?: string }[]>([]);
@@ -106,8 +165,38 @@ export const AdminDashboard: React.FC = () => {
     setAccountsLoading(false);
   };
 
+  const loadLeads = async () => {
+    setLeadsLoading(true);
+    const { data, error } = await supabase
+      .from('lead_requests')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) {
+      setLeads(data);
+    } else if (error) {
+      console.error('Failed to load leads:', error.message);
+    }
+    setLeadsLoading(false);
+  };
+
+  const handleDeleteLead = async (id: string) => {
+    if (confirm('Are you sure you want to delete this lead request?')) {
+      const { error } = await supabase
+        .from('lead_requests')
+        .delete()
+        .eq('id', id);
+      if (!error) {
+        setLeads(prev => prev.filter(l => l.id !== id));
+        triggerAlert('success', 'Lead request deleted.');
+      } else {
+        triggerAlert('error', 'Failed to delete: ' + error.message);
+      }
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'accounts') loadAccounts();
+    if (activeTab === 'leads') loadLeads();
   }, [activeTab]);
 
   // Notification State
@@ -155,6 +244,7 @@ export const AdminDashboard: React.FC = () => {
     setVendorJobTitle(vendor.job_title ?? '');
     setVendorSubscriptionEndDate(vendor.subscription_end_date ?? '');
     setVendorLanguage(vendor.language ?? 'en');
+    setVendorShowProfileUrl(vendor.show_profile_url ?? false);
     setActiveFormTab('info');
   };
 
@@ -197,6 +287,7 @@ export const AdminDashboard: React.FC = () => {
       job_title: vendorJobTitle,
       subscription_end_date: vendorSubscriptionEndDate,
       language: vendorLanguage,
+      show_profile_url: vendorShowProfileUrl,
     };
 
     await updateVendor(editingVendor.username, updatedVendor);
@@ -289,13 +380,7 @@ export const AdminDashboard: React.FC = () => {
     setVendorTabs(prev => prev.map(t => t.id === id ? { ...t, value: val } : t));
   };
 
-  const handleTabLabelChange = (id: string, label: string) => {
-    setVendorTabs(prev => prev.map(t => t.id === id ? { ...t, label } : t));
-  };
 
-  const handleCustomIconChange = (id: string, icon: string) => {
-    setVendorTabs(prev => prev.map(t => t.id === id ? { ...t, iconName: icon } : t));
-  };
 
   const handleAddCustomTab = () => {
     const newTab: Tab = {
@@ -486,6 +571,17 @@ export const AdminDashboard: React.FC = () => {
           >
             <Icons.KeyRound size={18} />
             <span>Account Management</span>
+          </button>
+
+          <button 
+            className={`admin-nav-item ${activeTab === 'leads' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('leads');
+              setIsMobileMenuOpen(false);
+            }}
+          >
+            <Icons.Inbox size={18} />
+            <span>Lead Requests</span>
           </button>
         </div>
 
@@ -940,6 +1036,79 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
+        {activeTab === 'leads' && (
+          <div>
+            <div className="admin-header" style={{ marginBottom: '1.5rem' }}>
+              <div>
+                <h2>Lead Requests</h2>
+                <p className="admin-title-desc">View and manage customer inquiries submitted via the "Get Started" lead form.</p>
+              </div>
+            </div>
+
+            <div className="admin-card">
+              {leadsLoading ? (
+                <div style={{ textAlign: 'center', padding: '3rem' }}>
+                  <Icons.Loader size={32} style={{ animation: 'spin 1s linear infinite', opacity: 0.5 }} />
+                </div>
+              ) : (
+                <div className="admin-table-container">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Company</th>
+                        <th>Message</th>
+                        <th style={{ textAlign: 'right' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {leads.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-admin-secondary)', padding: '2rem' }}>
+                            No lead requests found.
+                          </td>
+                        </tr>
+                      ) : (
+                        leads.map(lead => (
+                          <tr key={lead.id}>
+                            <td>{new Date(lead.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                            <td><strong style={{ color: 'white' }}>{lead.name}</strong></td>
+                            <td>{lead.phone || <span style={{ opacity: 0.3 }}>—</span>}</td>
+                            <td>{lead.email || <span style={{ opacity: 0.3 }}>—</span>}</td>
+                            <td>{lead.company || <span style={{ opacity: 0.4 }}>None</span>}</td>
+                            <td>
+                              {lead.message ? (
+                                <span title={lead.message} style={{ display: 'inline-block', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: 0.8 }}>
+                                  {lead.message}
+                                </span>
+                              ) : (
+                                <span style={{ opacity: 0.3 }}>—</span>
+                              )}
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              <button 
+                                type="button"
+                                className="admin-btn admin-btn-danger" 
+                                style={{ padding: '0.45rem', borderRadius: '8px', paddingInline: '8px' }}
+                                onClick={() => handleDeleteLead(lead.id)}
+                              >
+                                <Icons.Trash2 size={14} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Modal: Add New Vendor */}
         {isCreateModalOpen && (
 
@@ -1145,6 +1314,19 @@ export const AdminDashboard: React.FC = () => {
                           <option value="ar">Arabic (ar)</option>
                         </select>
                       </div>
+                    </div>
+
+                    <div className="input-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.25rem' }}>
+                      <input 
+                        type="checkbox" 
+                        id="vendorShowProfileUrl"
+                        checked={vendorShowProfileUrl}
+                        onChange={(e) => setVendorShowProfileUrl(e.target.checked)}
+                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                      />
+                      <label htmlFor="vendorShowProfileUrl" className="input-label" style={{ margin: 0, cursor: 'pointer', fontWeight: 600 }}>
+                        Show Profile URL (Premium Feature)
+                      </label>
                     </div>
 
                     <div className="input-group">
@@ -1429,15 +1611,15 @@ export const AdminDashboard: React.FC = () => {
                       
                       {/* Separate standard and custom tabs in listing */}
                       {vendorTabs.map(tab => (
-                        <div key={tab.id} className="tab-editor-row" style={{ opacity: tab.active ? 1 : 0.6 }}>
+                        <div key={tab.id} className="tab-editor-row" style={{ opacity: tab.active ? 1 : 0.6, alignItems: 'flex-start' }}>
                           <input 
                             type="checkbox"
                             checked={tab.active}
                             onChange={() => handleTabToggle(tab.id)}
-                            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                            style={{ width: '18px', height: '18px', cursor: 'pointer', marginTop: '8px' }}
                           />
                           
-                          <div style={{ width: '100px', fontSize: '0.85rem', fontWeight: 600, color: 'white', textTransform: 'capitalize' }}>
+                          <div style={{ width: '100px', fontSize: '0.85rem', fontWeight: 600, color: 'white', textTransform: 'capitalize', paddingTop: '8px' }}>
                             {tab.type}
                           </div>
 
@@ -1445,29 +1627,19 @@ export const AdminDashboard: React.FC = () => {
                             <div style={{ display: 'flex', flexGrow: 1, gap: '8px', alignItems: 'center' }}>
                               <input 
                                 type="text"
-                                placeholder="Tab Button Text"
-                                value={tab.label}
-                                onChange={(e) => handleTabLabelChange(tab.id, e.target.value)}
-                                className="input-field"
-                                style={{ padding: '0.45rem 0.75rem', fontSize: '0.85rem', width: '130px' }}
-                              />
-                              <input 
-                                type="text"
-                                placeholder="Link Value (URL)"
+                                placeholder="Paste any URL (e.g. instagram.com/you)"
                                 value={tab.value}
-                                onChange={(e) => handleTabValueChange(tab.id, e.target.value)}
+                                onChange={(e) => {
+                                  const newUrl = e.target.value;
+                                  const detected = detectUrlDetails(newUrl);
+                                  setVendorTabs(prev => prev.map(t => t.id === tab.id ? { ...t, value: newUrl, label: detected.label, iconName: detected.iconName } : t));
+                                }}
                                 className="input-field"
                                 style={{ padding: '0.45rem 0.75rem', fontSize: '0.85rem', flexGrow: 1 }}
                               />
-                              <select
-                                value={tab.iconName}
-                                onChange={(e) => handleCustomIconChange(tab.id, e.target.value)}
-                                style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', padding: '0.45rem 0.75rem', borderRadius: '10px', fontSize: '0.85rem' }}
-                              >
-                                {DYNAMIC_ICONS.map(i => (
-                                  <option key={i} value={i}>{i}</option>
-                                ))}
-                              </select>
+                              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <span style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc', padding: '2px 8px', borderRadius: '6px', fontWeight: 600 }}>{tab.label}</span>
+                              </div>
                               <button 
                                 type="button" 
                                 className="admin-btn admin-btn-danger" 
@@ -1478,20 +1650,61 @@ export const AdminDashboard: React.FC = () => {
                               </button>
                             </div>
                           ) : (
-                            <div style={{ display: 'flex', flexGrow: 1, gap: '8px', alignItems: 'center' }}>
-                              <input 
-                                type="text"
-                                placeholder={
-                                  tab.type === 'whatsapp' ? 'Phone number (+1555...)' :
-                                  tab.type === 'mail' ? 'email@address.com' :
-                                  tab.type === 'maps' ? 'Location address or query' :
-                                  'Username or Profile ID'
-                                }
-                                value={tab.value}
-                                onChange={(e) => handleTabValueChange(tab.id, e.target.value)}
-                                className="input-field"
-                                style={{ padding: '0.45rem 0.75rem', fontSize: '0.85rem', flexGrow: 1 }}
-                              />
+                            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '6px' }}>
+                              {(tab.value || '').split('|||').map((val, idx, arr) => (
+                                <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                  <input 
+                                    type="text"
+                                    placeholder={
+                                      tab.type === 'whatsapp' ? 'Phone number (+1555...)' :
+                                      tab.type === 'mail' ? 'email@address.com' :
+                                      tab.type === 'maps' ? 'Location address or query' :
+                                      tab.type === 'website' ? 'https://yoursite.com' :
+                                      'Username or Profile ID'
+                                    }
+                                    value={val}
+                                    onChange={(e) => {
+                                      const updated = [...arr];
+                                      updated[idx] = e.target.value;
+                                      handleTabValueChange(tab.id, updated.join('|||'));
+                                    }}
+                                    className="input-field"
+                                    style={{ padding: '0.45rem 0.75rem', fontSize: '0.85rem', flexGrow: 1 }}
+                                  />
+                                  {arr.length > 1 && (
+                                    <button
+                                      type="button"
+                                      className="admin-btn admin-btn-danger"
+                                      style={{ padding: '0.45rem', borderRadius: '8px', flexShrink: 0 }}
+                                      onClick={() => {
+                                        const updated = arr.filter((_, i) => i !== idx);
+                                        handleTabValueChange(tab.id, updated.join('|||'));
+                                      }}
+                                    >
+                                      <Icons.Trash2 size={13} />
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                              {['whatsapp', 'instagram', 'facebook', 'linkedin', 'phone', 'mail', 'website', 'telegram'].includes(tab.type) && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const current = tab.value || '';
+                                    const newVal = current ? current + '|||' : '';
+                                    handleTabValueChange(tab.id, newVal);
+                                  }}
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                    background: 'rgba(99,102,241,0.15)', color: '#a5b4fc',
+                                    border: '1px dashed rgba(99,102,241,0.4)', borderRadius: '8px',
+                                    padding: '0.3rem 0.65rem', fontSize: '0.75rem', fontWeight: 600,
+                                    cursor: 'pointer', alignSelf: 'flex-start', marginTop: '2px'
+                                  }}
+                                >
+                                  <Icons.Plus size={12} /> Add another
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>

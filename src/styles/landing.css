@@ -50,8 +50,8 @@
   letter-spacing: -0.02em;
 }
 .lp-nav-logo-img {
-  width: 72px;
-  height: 72px;
+  width: 104px;
+  height: 104px;
   object-fit: contain;
   border-radius: 10px;
   flex-shrink: 0;
@@ -132,8 +132,8 @@
     height: 72px;
   }
   .lp-nav-logo-img {
-    width: 56px;
-    height: 56px;
+    width: 72px;
+    height: 72px;
   }
   .lp-nav-logo {
     font-size: 1.3rem;
@@ -1085,8 +1085,8 @@
   letter-spacing: 0.06em;
 }
 .lp-footer-logo-img {
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
   border-radius: 8px;
   flex-shrink: 0;

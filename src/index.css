@@ -205,6 +205,104 @@ button, input, select, textarea {
   transform: translateX(4px);
 }
 
+/* ─── Multi-value tab card ─────────────────────────────────────────── */
+.vendor-link-tab-multi {
+  flex-direction: column;
+  align-items: stretch;
+  cursor: default;
+  padding-bottom: 0.5rem;
+}
+
+.vendor-link-tab-multi > .tab-icon {
+  position: absolute;
+  left: 1.25rem;
+  top: 1rem;
+}
+
+.vendor-link-tab-multi > .tab-text {
+  padding-left: 2.25rem;
+  padding-bottom: 0.6rem;
+}
+
+.vendor-link-tab-subitems {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0 0.5rem 0.25rem;
+}
+
+.vendor-link-tab-subitem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.9rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: inherit;
+  text-decoration: none;
+  font-size: 0.87rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.vendor-link-tab-subitem:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateX(4px);
+}
+
+.vendor-link-tab-subitem .subitem-value {
+  flex: 1;
+}
+
+.vendor-link-tab-subitem .subitem-arrow {
+  opacity: 0.5;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.vendor-link-tab-subitem:hover .subitem-arrow {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+/* Light-glass theme overrides for multi-link subitems */
+.vendor-profile-wrapper.theme-light-glass .vendor-link-tab-subitem {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(226, 232, 240, 0.8);
+  color: #334155;
+}
+
+.vendor-profile-wrapper.theme-light-glass .vendor-link-tab-subitem:hover {
+  background: #ffffff;
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+/* RTL support for multi-link tabs */
+[dir="rtl"] .vendor-link-tab-multi > .tab-icon {
+  left: auto;
+  right: 1.25rem;
+}
+
+[dir="rtl"] .vendor-link-tab-multi > .tab-text {
+  padding-left: 0;
+  padding-right: 2.25rem;
+}
+
+[dir="rtl"] .vendor-link-tab-subitem:hover {
+  transform: translateX(-4px);
+}
+
+[dir="rtl"] .vendor-link-tab-subitem .subitem-arrow {
+  margin-left: 0;
+  margin-right: 0.5rem;
+  transform: scaleX(-1);
+}
+
 /* Buy Card Banner */
 .buy-card-banner {
   margin-top: 2rem;
@@ -965,19 +1063,21 @@ select option {
    ============================================ */
 .profile-action-btns {
   display: flex;
-  gap: 0.75rem;
+  gap: 1rem;
   justify-content: center;
-  margin-bottom: 1.75rem;
+  margin-bottom: 2rem;
   flex-wrap: wrap;
+  width: 100%;
 }
 
 .profile-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.65rem 1.4rem;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 0.9rem 1.8rem;
   border-radius: 50px;
-  font-size: 0.88rem;
+  font-size: 1.05rem;
   font-weight: 700;
   border: none;
   cursor: pointer;
@@ -985,35 +1085,37 @@ select option {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  flex: 1;
+  min-width: 145px;
+  max-width: 220px;
 }
 
 .profile-vcf-btn {
-  background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.15));
-  border: 1px solid rgba(99,102,241,0.35);
-  color: #a5b4fc;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 .profile-vcf-btn:hover {
-  background: linear-gradient(135deg, rgba(99,102,241,0.35), rgba(139,92,246,0.3));
-  border-color: rgba(99,102,241,0.6);
-  color: #c4b5fd;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(99,102,241,0.3);
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #ffffff;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(99,102,241,0.5);
 }
-.profile-vcf-btn:active { transform: scale(0.97); }
+.profile-vcf-btn:active { transform: scale(0.96); }
 
 .profile-phone-btn {
-  background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(6,182,212,0.15));
-  border: 1px solid rgba(16,185,129,0.35);
-  color: #6ee7b7;
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 .profile-phone-btn:hover {
-  background: linear-gradient(135deg, rgba(16,185,129,0.35), rgba(6,182,212,0.3));
-  border-color: rgba(16,185,129,0.6);
-  color: #a7f3d0;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(16,185,129,0.3);
+  background: linear-gradient(135deg, #059669 0%, #0891b2 100%);
+  color: #ffffff;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(16,185,129,0.5);
 }
-.profile-phone-btn:active { transform: scale(0.97); }
+.profile-phone-btn:active { transform: scale(0.96); }
 
 /* Light glass theme overrides for action buttons */
 .vendor-profile-wrapper.theme-light-glass .profile-vcf-btn {

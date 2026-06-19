@@ -46,12 +46,12 @@ const getTabUrl = (type: string, value: string) => {
       // Value is normally the full InstaPay link
       return cleanValue.includes('.') ? `https://${cleanValue}` : cleanValue;
     case 'custom':
-      // For custom tabs, treat value as a full URL if it has a dot; otherwise return as-is
+      // Auto-prepend https:// if missing
       if (!cleanValue) return '#';
-      if (cleanValue.includes('.') && !cleanValue.includes(' ')) {
-        return `https://${cleanValue}`;
+      if (cleanValue.startsWith('http://') || cleanValue.startsWith('https://')) {
+        return cleanValue;
       }
-      return cleanValue;
+      return `https://${cleanValue}`;
     default:
       return cleanValue.includes('.') ? `https://${cleanValue}` : cleanValue;
   }
@@ -114,8 +114,10 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
     if (!vendor || trackedRef.current) return;
     trackedRef.current = true;
 
-    const params = new URLSearchParams(window.location.search);
-    const isQr = params.get('source') === 'qr';
+    const hash = window.location.hash;
+    const queryIdx = hash.indexOf('?');
+    const queryParams = new URLSearchParams(queryIdx !== -1 ? hash.substring(queryIdx) : '');
+    const isQr = queryParams.get('source') === 'qr';
 
     if (isQr) {
       trackEvent(vendor.username, 'qr_scan', undefined, 'qr');
@@ -188,11 +190,12 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
 
   const themeClass = isCustomTheme ? 'custom-theme-wrapper' : `theme-${theme.preset}`;
 
-  // ─── Active tabs filter — for custom tabs require label, for others require value ──
+  // ─── Active tabs filter — for custom tabs require label, for others require at least one non-empty value ──
   const activeTabs = vendor.tabs.filter(tab => {
     if (!tab.active) return false;
     if (tab.type === 'custom') return tab.label.trim() !== '';  // custom only needs a label
-    return tab.value.trim() !== '';
+    // For standard tabs, check if at least one sub-value (split by |||) is non-empty
+    return tab.value.split('|||').some(v => v.trim() !== '');
   });
 
   const handleLinkClick = (tabType: string) => {
@@ -253,7 +256,7 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
               onClick={handleVCFClick}
               aria-label={isAr ? 'حفظ جهة الاتصال' : 'Save Contact'}
             >
-              <Icons.UserPlus size={16} />
+              <Icons.UserPlus size={20} />
               {isAr ? 'حفظ جهة الاتصال' : 'Save Contact'}
             </button>
             {vendor.phone_number && (
@@ -263,7 +266,7 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
                 onClick={() => trackEvent(vendor.username, 'phone_click')}
                 aria-label={isAr ? 'اتصل' : 'Call'}
               >
-                <Icons.Phone size={16} />
+                <Icons.Phone size={20} />
                 {isAr ? 'اتصل' : 'Call'}
               </a>
             )}
@@ -274,6 +277,49 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
         <div className="vendor-links-list">
           {activeTabs.map(tab => {
             const isInstaPay = tab.type === 'instapay';
+            const subValues = tab.value.split('|||').map(v => v.trim()).filter(v => v !== '');
+            const isMulti = subValues.length > 1;
+
+            const iconEl = isInstaPay ? (
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#10b981', filter: 'drop-shadow(0 0 4px rgba(16,185,129,0.3))' }}>
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="#10b981" />
+              </svg>
+            ) : (
+              <DynamicIcon name={tab.type === 'custom' ? (tab.iconName || 'Link') : getSocialIconName(tab.type)} size={20} />
+            );
+
+            if (isMulti) {
+              return (
+                <div key={tab.id} className="vendor-link-tab vendor-link-tab-multi">
+                  {/* Header row — icon + label only */}
+                  <span className="tab-icon">{iconEl}</span>
+                  <span className="tab-text">
+                    <span style={{ display: 'block', fontWeight: 700, fontSize: '0.95rem' }}>{tab.label}</span>
+                  </span>
+                  {/* Stacked sub-links */}
+                  <div className="vendor-link-tab-subitems">
+                    {subValues.map((subVal, idx) => {
+                      const subUrl = getTabUrl(tab.type, subVal);
+                      const subDisplay = getTabDisplay(tab.type, subVal);
+                      return (
+                        <a
+                          key={idx}
+                          href={subUrl}
+                          target={tab.type === 'phone' || tab.type === 'mail' ? '_self' : '_blank'}
+                          rel="noopener noreferrer"
+                          className="vendor-link-tab-subitem"
+                          onClick={() => handleLinkClick(tab.type)}
+                        >
+                          <span className="subitem-value">{subDisplay || subVal}</span>
+                          <Icons.ChevronRight size={14} className="subitem-arrow" />
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            }
+
             const url = getTabUrl(tab.type, tab.value);
             const displayValue = tab.type === 'custom' ? '' : getTabDisplay(tab.type, tab.value);
 
@@ -286,15 +332,7 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
                 className="vendor-link-tab"
                 onClick={() => handleLinkClick(tab.type)}
               >
-                <span className="tab-icon">
-                  {isInstaPay ? (
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#10b981', filter: 'drop-shadow(0 0 4px rgba(16,185,129,0.3))' }}>
-                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="#10b981" />
-                    </svg>
-                  ) : (
-                    <DynamicIcon name={tab.type === 'custom' ? (tab.iconName || 'Link') : getSocialIconName(tab.type)} size={20} />
-                  )}
-                </span>
+                <span className="tab-icon">{iconEl}</span>
                 <span className="tab-text">
                   <span style={{ display: 'block', fontWeight: 700, fontSize: '0.95rem' }}>{tab.label}</span>
                   {displayValue && (

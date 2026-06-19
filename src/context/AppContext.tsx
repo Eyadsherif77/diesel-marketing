@@ -41,6 +41,7 @@ export interface Vendor {
   subscription_end_date?: string;
   analytics_reset_at?: string;
   language?: 'en' | 'ar';
+  show_profile_url?: boolean;
 }
 
 export interface CardOrder {
@@ -99,6 +100,7 @@ function rowToVendor(row: any): Vendor {
     subscription_end_date: resolvedSubExpiry,
     analytics_reset_at: row.analytics_reset_at ?? '',
     language: (row.language === 'ar' ? 'ar' : 'en') as 'en' | 'ar',
+    show_profile_url: row.show_profile_url ?? false,
   };
 }
 
@@ -122,6 +124,7 @@ function vendorToRow(vendor: Vendor) {
     subscription_end_date: vendor.subscription_end_date || null,
     analytics_reset_at: vendor.analytics_reset_at || null,
     language: vendor.language ?? 'en',
+    show_profile_url: vendor.show_profile_url ?? false,
   };
 }
 

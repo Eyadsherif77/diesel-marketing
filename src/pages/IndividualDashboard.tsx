@@ -8,6 +8,7 @@ import {
   type AnalyticsSummary,
   type DailyPoint,
 } from '../lib/analytics';
+import { QRCodeCanvas } from 'qrcode.react';
 import '../styles/landing.css';
 
 interface Session {
@@ -54,6 +55,56 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
   const [resetTimestamp, setResetTimestamp] = useState<string | null>(null);
 
   const vendor = vendors.find(v => v.username.toLowerCase() === vendorUsername.toLowerCase());
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(`https://devtechh.com/#/${vendorUsername}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const downloadQR = () => {
+    const canvas = document.getElementById('profile-qr-canvas') as HTMLCanvasElement;
+    if (canvas) {
+      const pngUrl = canvas.toDataURL('image/png');
+      const downloadLink = document.createElement('a');
+      downloadLink.href = pngUrl;
+      downloadLink.download = `${vendorUsername}_devtech_qr.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    }
+  };
+
+  const printQR = () => {
+    const canvas = document.getElementById('profile-qr-canvas') as HTMLCanvasElement;
+    if (canvas) {
+      const pngUrl = canvas.toDataURL('image/png');
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>Print QR Code - @${vendorUsername}</title>
+              <style>
+                body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; }
+                img { width: 250px; height: 250px; }
+                h2 { margin-top: 20px; color: #333; }
+                p { color: #666; font-size: 14px; }
+              </style>
+            </head>
+            <body onload="window.print(); window.close();">
+              <img src="${pngUrl}" />
+              <h2>@${vendorUsername}</h2>
+              <p>Scan to view DevTech profile</p>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+      }
+    }
+  };
 
   const calculateDaysLeft = (expiry: string | null) => {
     if (!expiry) return null;
@@ -199,11 +250,13 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
             <Icons.User size={14} />
             @{session.username}
           </div>
-          <a href={`#/${vendorUsername}`} target="_blank" rel="noreferrer"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.85rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '50px', color: '#94a3b8', fontSize: '0.85rem', textDecoration: 'none', transition: 'all 0.2s' }}>
-            <Icons.ExternalLink size={13} />
-            View Profile
-          </a>
+          {(vendor?.show_profile_url ?? false) && (
+            <a href={`#/${vendorUsername}`} target="_blank" rel="noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.85rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '50px', color: '#94a3b8', fontSize: '0.85rem', textDecoration: 'none', transition: 'all 0.2s' }}>
+              <Icons.ExternalLink size={13} />
+              View Profile
+            </a>
+          )}
           <button className="dash-logout-btn" onClick={handleLogout}>
             <Icons.LogOut size={13} />
             Logout
@@ -442,20 +495,99 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
                         <span style={{ color: '#94a3b8', fontWeight: 500 }}>{row.value}</span>
                       </div>
                     ))}
-                    <a
-                      href={`#/${vendorUsername}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="submit-btn"
-                      style={{ marginTop: '1rem', textDecoration: 'none', fontSize: '0.88rem', padding: '0.7rem', background: 'linear-gradient(135deg, #7660F1, #2563EB)' }}
-                    >
-                      <Icons.ExternalLink size={15} />
-                      Open Profile
-                    </a>
+                    {(vendor?.show_profile_url ?? false) && (
+                      <a
+                        href={`#/${vendorUsername}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="submit-btn"
+                        style={{ marginTop: '1rem', textDecoration: 'none', fontSize: '0.88rem', padding: '0.7rem', background: 'linear-gradient(135deg, #7660F1, #2563EB)' }}
+                      >
+                        <Icons.ExternalLink size={15} />
+                        Open Profile
+                      </a>
+                    )}
                   </div>
                 ) : (
                   <p style={{ color: '#475569' }}>Vendor profile not found.</p>
                 )}
+              </div>
+
+              {/* Profile QR & Sharing */}
+              <div className="dash-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div className="dash-card-title">
+                  <Icons.QrCode size={16} color="#7660F1" />
+                  Profile Sharing &amp; QR
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                  <div style={{ padding: '10px', background: '#fff', borderRadius: '12px', display: 'inline-flex', boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>
+                    <QRCodeCanvas 
+                      id="profile-qr-canvas" 
+                      value={`https://devtechh.com/#/${vendorUsername}?source=qr`} 
+                      size={140} 
+                      level="H" 
+                      includeMargin={true}
+                    />
+                  </div>
+                  <span style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '10px', fontWeight: 600 }}>Scan QR to visit profile</span>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button className="submit-btn" onClick={downloadQR} style={{ margin: 0, padding: '0.5rem 0.9rem', fontSize: '0.82rem', flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                    <Icons.Download size={14} />
+                    Download PNG
+                  </button>
+                  <button className="submit-btn" onClick={printQR} style={{ margin: 0, padding: '0.5rem 0.9rem', fontSize: '0.82rem', flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                    <Icons.Printer size={14} />
+                    Print
+                  </button>
+                </div>
+
+                {(vendor?.show_profile_url ?? false) ? (
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Direct Profile Link</label>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value={`https://devtechh.com/#/${vendorUsername}`} 
+                        style={{ flexGrow: 1, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '6px 10px', color: '#94a3b8', fontSize: '0.8rem', outline: 'none' }}
+                      />
+                      <button 
+                        type="button"
+                        onClick={handleCopyLink} 
+                        style={{ background: 'linear-gradient(135deg, #7660F1, #2563EB)', border: 'none', borderRadius: '8px', padding: '6px 12px', color: 'white', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <Icons.Copy size={12} />
+                        {copied ? 'Copied!' : 'Copy'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '0.78rem' }}>
+                    <Icons.Lock size={12} />
+                    <span>Direct profile link is hidden by Administrator</span>
+                  </div>
+                )}
+
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div style={{ background: 'rgba(6,182,212,0.05)', border: '1px solid rgba(6,182,212,0.1)', borderRadius: '12px', padding: '10px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.72rem', color: '#06B6D4', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Today's Scans</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f1f5f9' }}>
+                      {(() => {
+                        const todayPt = daily[daily.length - 1];
+                        return todayPt ? todayPt.qr_scan : 0;
+                      })()}
+                    </div>
+                  </div>
+                  <div style={{ background: 'rgba(6,182,212,0.05)', border: '1px solid rgba(6,182,212,0.1)', borderRadius: '12px', padding: '10px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.72rem', color: '#06B6D4', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>This Month</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f1f5f9' }}>
+                      {daily.reduce((sum, pt) => sum + pt.qr_scan, 0)}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </>
