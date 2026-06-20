@@ -331,6 +331,7 @@ button, input, select, textarea {
   margin-bottom: 0.25rem;
   background: linear-gradient(to right, #a5b4fc, #f472b6);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -507,6 +508,7 @@ button, input, select, textarea {
   font-family: var(--font-display);
   background: #1877F2;
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   display: flex;
   align-items: center;
