@@ -191,12 +191,20 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
     if (!session) return;
     if (confirm('Are you sure you want to reset your current period analytics? This will filter your current view to start from today. Historical lifetime analytics will NOT be deleted.')) {
       const now = new Date().toISOString();
-      const { error } = await supabase
-        .from('individual_accounts')
-        .update({ analytics_reset_at: now })
-        .eq('username', session.username.toLowerCase());
       
-      if (!error) {
+      // Update both individual_accounts AND vendors table to ensure persistence across logout/login
+      const [{ error: accError }, { error: vendorError }] = await Promise.all([
+        supabase
+          .from('individual_accounts')
+          .update({ analytics_reset_at: now })
+          .eq('username', session.username.toLowerCase()),
+        supabase
+          .from('vendors')
+          .update({ analytics_reset_at: now })
+          .eq('username', vendorUsername.toLowerCase()),
+      ]);
+      
+      if (!accError && !vendorError) {
         setResetTimestamp(now);
         // Reload both summaries with the new reset timestamp
         const [sumLifetime, sumCurrent, day] = await Promise.all([
@@ -209,6 +217,7 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
         setDaily(day);
         setStatView('current'); // Switch to current period view after reset
       } else {
+        console.error('Reset error (accounts):', accError, 'Reset error (vendors):', vendorError);
         alert('Failed to reset analytics. Please try again.');
       }
     }

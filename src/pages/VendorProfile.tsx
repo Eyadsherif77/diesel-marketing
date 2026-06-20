@@ -234,7 +234,7 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
             className="profile-avatar"
           />
           <div className="verified-icon">
-            <Icons.Check size={14} strokeWidth={3} />
+            <Icons.Check size={16} strokeWidth={3} />
           </div>
         </div>
 
@@ -256,7 +256,7 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
               onClick={handleVCFClick}
               aria-label={isAr ? 'حفظ جهة الاتصال' : 'Save Contact'}
             >
-              <Icons.UserPlus size={20} />
+              <Icons.UserPlus size={24} />
               {isAr ? 'حفظ جهة الاتصال' : 'Save Contact'}
             </button>
             {vendor.phone_number && (
@@ -266,7 +266,7 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
                 onClick={() => trackEvent(vendor.username, 'phone_click')}
                 aria-label={isAr ? 'اتصل' : 'Call'}
               >
-                <Icons.Phone size={20} />
+                <Icons.Phone size={24} />
                 {isAr ? 'اتصل' : 'Call'}
               </a>
             )}

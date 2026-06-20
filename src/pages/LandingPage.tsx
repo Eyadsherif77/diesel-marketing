@@ -667,36 +667,36 @@ export const LandingPage: React.FC = () => {
 
       {isLeadModalOpen && (
         <div className="modal-overlay" style={{ zIndex: 1000 }}>
-          <div className="modal-content" style={{ maxWidth: '500px', padding: '2rem', background: 'linear-gradient(135deg, #0e1322 0%, #161d30 100%)', border: '1px solid rgba(118,96,241,0.25)', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
-            <div className="modal-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="modal-content" style={{ maxWidth: '500px', padding: '2rem', background: '#FFFFFF', border: '1px solid #E4E6EB', borderRadius: '24px', boxShadow: '0 12px 28px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)' }}>
+            <div className="modal-header" style={{ borderBottom: '1px solid #E4E6EB', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <h3 style={{ fontSize: '1.4rem', fontFamily: 'var(--font-display)', fontWeight: 800, background: 'linear-gradient(135deg, #7660F1, #06B6D4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>Get Started with DevTech</h3>
-                <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '4px 0 0' }}>Tell us about your project or card requirements</p>
+                <h3 style={{ fontSize: '1.4rem', fontFamily: 'var(--font-display)', fontWeight: 800, color: '#1877F2', margin: 0 }}>Get Started with DevTech</h3>
+                <p style={{ fontSize: '0.8rem', color: '#65676B', margin: '4px 0 0' }}>Tell us about your project or card requirements</p>
               </div>
-              <button type="button" className="modal-close-btn" onClick={() => { setIsLeadModalOpen(false); setLeadError(''); }} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.2s' }}>
+              <button type="button" className="modal-close-btn" onClick={() => { setIsLeadModalOpen(false); setLeadError(''); }} style={{ background: 'transparent', border: 'none', color: '#65676B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.2s' }}>
                 <Icons.X size={20} />
               </button>
             </div>
 
             {leadSuccess ? (
               <div style={{ textAlign: 'center', padding: '2rem 0', animation: 'scaleUp 0.3s ease' }}>
-                <div style={{ display: 'inline-flex', padding: '16px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '50%', color: '#10b981', marginBottom: '1.5rem', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                <div style={{ display: 'inline-flex', padding: '16px', background: 'rgba(66, 183, 42, 0.1)', borderRadius: '50%', color: '#42B72A', marginBottom: '1.5rem', border: '1px solid rgba(66, 183, 42, 0.2)' }}>
                   <Icons.CheckCircle size={44} />
                 </div>
-                <h4 style={{ fontSize: '1.25rem', color: '#fff', marginBottom: '0.5rem', fontFamily: 'var(--font-display)' }}>Request Submitted!</h4>
-                <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>Thank you. Our team will get back to you within 24 hours.</p>
+                <h4 style={{ fontSize: '1.25rem', color: '#050505', marginBottom: '0.5rem', fontFamily: 'var(--font-display)' }}>Request Submitted!</h4>
+                <p style={{ color: '#65676B', fontSize: '0.88rem' }}>Thank you. Our team will get back to you within 24 hours.</p>
               </div>
             ) : (
               <form onSubmit={handleLeadSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 {leadError && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.75rem 1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '12px', color: '#f87171', fontSize: '0.82rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.75rem 1rem', background: 'rgba(250, 62, 62, 0.1)', border: '1px solid rgba(250, 62, 62, 0.2)', borderRadius: '12px', color: '#FA3E3E', fontSize: '0.82rem' }}>
                     <Icons.AlertCircle size={16} />
                     <span>{leadError}</span>
                   </div>
                 )}
 
                 <div className="input-group" style={{ margin: 0 }}>
-                  <label className="input-label" style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Your Name *</label>
+                  <label className="input-label" style={{ fontSize: '0.8rem', color: '#65676B', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Your Name *</label>
                   <input 
                     type="text" 
                     placeholder="Enter your full name"
@@ -704,13 +704,13 @@ export const LandingPage: React.FC = () => {
                     onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
                     className="input-field"
                     required
-                    style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', width: '100%', color: 'white', borderRadius: '10px' }}
+                    style={{ background: '#FFFFFF', border: '1px solid #CCD0D5', width: '100%', color: '#050505', borderRadius: '10px' }}
                   />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div className="input-group" style={{ margin: 0 }}>
-                    <label className="input-label" style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Phone Number *</label>
+                    <label className="input-label" style={{ fontSize: '0.8rem', color: '#65676B', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Phone Number *</label>
                     <input 
                       type="text" 
                       placeholder="+201..."
@@ -718,11 +718,11 @@ export const LandingPage: React.FC = () => {
                       onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
                       className="input-field"
                       required
-                      style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', width: '100%', color: 'white', borderRadius: '10px' }}
+                      style={{ background: '#FFFFFF', border: '1px solid #CCD0D5', width: '100%', color: '#050505', borderRadius: '10px' }}
                     />
                   </div>
                   <div className="input-group" style={{ margin: 0 }}>
-                    <label className="input-label" style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Email Address *</label>
+                    <label className="input-label" style={{ fontSize: '0.8rem', color: '#65676B', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Email Address *</label>
                     <input 
                       type="email" 
                       placeholder="name@example.com"
@@ -730,32 +730,32 @@ export const LandingPage: React.FC = () => {
                       onChange={(e) => setLeadForm(prev => ({ ...prev, email: e.target.value }))}
                       className="input-field"
                       required
-                      style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', width: '100%', color: 'white', borderRadius: '10px' }}
+                      style={{ background: '#FFFFFF', border: '1px solid #CCD0D5', width: '100%', color: '#050505', borderRadius: '10px' }}
                     />
                   </div>
                 </div>
 
                 <div className="input-group" style={{ margin: 0 }}>
-                  <label className="input-label" style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Company Name (Optional)</label>
+                  <label className="input-label" style={{ fontSize: '0.8rem', color: '#65676B', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Company Name (Optional)</label>
                   <input 
                     type="text" 
                     placeholder="Enter company name"
                     value={leadForm.company}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, company: e.target.value }))}
                     className="input-field"
-                    style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', width: '100%', color: 'white', borderRadius: '10px' }}
+                    style={{ background: '#FFFFFF', border: '1px solid #CCD0D5', width: '100%', color: '#050505', borderRadius: '10px' }}
                   />
                 </div>
 
                 <div className="input-group" style={{ margin: 0 }}>
-                  <label className="input-label" style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Message / Requirements (Optional)</label>
+                  <label className="input-label" style={{ fontSize: '0.8rem', color: '#65676B', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Message / Requirements (Optional)</label>
                   <textarea 
                     placeholder="Tell us what you need..."
                     value={leadForm.message}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
                     className="input-field"
                     rows={3}
-                    style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', width: '100%', color: 'white', borderRadius: '10px', resize: 'vertical' }}
+                    style={{ background: '#FFFFFF', border: '1px solid #CCD0D5', width: '100%', color: '#050505', borderRadius: '10px', resize: 'vertical' }}
                   />
                 </div>
 
