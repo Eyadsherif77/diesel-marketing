@@ -428,6 +428,14 @@ export const AdminDashboard: React.FC = () => {
   React.useEffect(() => {
     if (editingVendor) {
       syncStandardTabs();
+      // Ensure the modal scroll starts at the top
+      setTimeout(() => {
+        const modalOverlay = document.querySelector('.modal-overlay');
+        if (modalOverlay) {
+          modalOverlay.scrollTop = 0;
+        }
+      }, 50);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [editingVendor]);
 
@@ -1650,7 +1658,7 @@ export const AdminDashboard: React.FC = () => {
                               </button>
                             </div>
                           ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '6px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '12px' }}>
                               {(tab.value || '').split('|||').map((val, idx, arr) => (
                                 <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                   <input 
@@ -1699,7 +1707,7 @@ export const AdminDashboard: React.FC = () => {
                                     background: 'rgba(99,102,241,0.15)', color: '#a5b4fc',
                                     border: '1px dashed rgba(99,102,241,0.4)', borderRadius: '8px',
                                     padding: '0.3rem 0.65rem', fontSize: '0.75rem', fontWeight: 600,
-                                    cursor: 'pointer', alignSelf: 'flex-start', marginTop: '2px'
+                                    cursor: 'pointer', alignSelf: 'flex-start', marginTop: '10px'
                                   }}
                                 >
                                   <Icons.Plus size={12} /> Add another
