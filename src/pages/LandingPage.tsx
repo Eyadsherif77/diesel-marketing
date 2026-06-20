@@ -671,9 +671,9 @@ export const LandingPage: React.FC = () => {
             <div className="modal-header" style={{ borderBottom: '1px solid #E4E6EB', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ fontSize: '1.4rem', fontFamily: 'var(--font-display)', fontWeight: 800, color: '#1877F2', margin: 0 }}>Get Started with DevTech</h3>
-                <p style={{ fontSize: '0.8rem', color: '#65676B', margin: '4px 0 0' }}>Tell us about your project or card requirements</p>
+                <p style={{ fontSize: '0.8rem', color: '#4B5563', margin: '4px 0 0' }}>Tell us about your project or card requirements</p>
               </div>
-              <button type="button" className="modal-close-btn" onClick={() => { setIsLeadModalOpen(false); setLeadError(''); }} style={{ background: 'transparent', border: 'none', color: '#65676B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.2s' }}>
+              <button type="button" className="modal-close-btn" onClick={() => { setIsLeadModalOpen(false); setLeadError(''); }} style={{ background: 'transparent', border: 'none', color: '#4B5563', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.2s' }}>
                 <Icons.X size={20} />
               </button>
             </div>
@@ -683,8 +683,8 @@ export const LandingPage: React.FC = () => {
                 <div style={{ display: 'inline-flex', padding: '16px', background: 'rgba(66, 183, 42, 0.1)', borderRadius: '50%', color: '#42B72A', marginBottom: '1.5rem', border: '1px solid rgba(66, 183, 42, 0.2)' }}>
                   <Icons.CheckCircle size={44} />
                 </div>
-                <h4 style={{ fontSize: '1.25rem', color: '#050505', marginBottom: '0.5rem', fontFamily: 'var(--font-display)' }}>Request Submitted!</h4>
-                <p style={{ color: '#65676B', fontSize: '0.88rem' }}>Thank you. Our team will get back to you within 24 hours.</p>
+                <h4 style={{ fontSize: '1.25rem', color: '#1F2937', marginBottom: '0.5rem', fontFamily: 'var(--font-display)' }}>Request Submitted!</h4>
+                <p style={{ color: '#4B5563', fontSize: '0.88rem' }}>Thank you. Our team will get back to you within 24 hours.</p>
               </div>
             ) : (
               <form onSubmit={handleLeadSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -696,7 +696,7 @@ export const LandingPage: React.FC = () => {
                 )}
 
                 <div className="input-group" style={{ margin: 0 }}>
-                  <label className="input-label" style={{ fontSize: '0.8rem', color: '#65676B', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Your Name *</label>
+                  <label className="input-label" style={{ fontSize: '0.8rem', color: '#4B5563', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Your Name *</label>
                   <input 
                     type="text" 
                     placeholder="Enter your full name"
@@ -704,13 +704,13 @@ export const LandingPage: React.FC = () => {
                     onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
                     className="input-field"
                     required
-                    style={{ background: '#FFFFFF', border: '1px solid #CCD0D5', width: '100%', color: '#050505', borderRadius: '10px' }}
+                    style={{ background: '#FFFFFF', border: '1px solid #CCD0D5', width: '100%', color: '#1F2937', borderRadius: '10px' }}
                   />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div className="input-group" style={{ margin: 0 }}>
-                    <label className="input-label" style={{ fontSize: '0.8rem', color: '#65676B', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Phone Number *</label>
+                    <label className="input-label" style={{ fontSize: '0.8rem', color: '#4B5563', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Phone Number *</label>
                     <input 
                       type="text" 
                       placeholder="+201..."
@@ -718,11 +718,11 @@ export const LandingPage: React.FC = () => {
                       onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
                       className="input-field"
                       required
-                      style={{ background: '#FFFFFF', border: '1px solid #CCD0D5', width: '100%', color: '#050505', borderRadius: '10px' }}
+                      style={{ background: '#FFFFFF', border: '1px solid #CCD0D5', width: '100%', color: '#1F2937', borderRadius: '10px' }}
                     />
                   </div>
                   <div className="input-group" style={{ margin: 0 }}>
-                    <label className="input-label" style={{ fontSize: '0.8rem', color: '#65676B', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Email Address *</label>
+                    <label className="input-label" style={{ fontSize: '0.8rem', color: '#4B5563', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Email Address *</label>
                     <input 
                       type="email" 
                       placeholder="name@example.com"
@@ -730,32 +730,32 @@ export const LandingPage: React.FC = () => {
                       onChange={(e) => setLeadForm(prev => ({ ...prev, email: e.target.value }))}
                       className="input-field"
                       required
-                      style={{ background: '#FFFFFF', border: '1px solid #CCD0D5', width: '100%', color: '#050505', borderRadius: '10px' }}
+                      style={{ background: '#FFFFFF', border: '1px solid #CCD0D5', width: '100%', color: '#1F2937', borderRadius: '10px' }}
                     />
                   </div>
                 </div>
 
                 <div className="input-group" style={{ margin: 0 }}>
-                  <label className="input-label" style={{ fontSize: '0.8rem', color: '#65676B', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Company Name (Optional)</label>
+                  <label className="input-label" style={{ fontSize: '0.8rem', color: '#4B5563', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Company Name (Optional)</label>
                   <input 
                     type="text" 
                     placeholder="Enter company name"
                     value={leadForm.company}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, company: e.target.value }))}
                     className="input-field"
-                    style={{ background: '#FFFFFF', border: '1px solid #CCD0D5', width: '100%', color: '#050505', borderRadius: '10px' }}
+                    style={{ background: '#FFFFFF', border: '1px solid #CCD0D5', width: '100%', color: '#1F2937', borderRadius: '10px' }}
                   />
                 </div>
 
                 <div className="input-group" style={{ margin: 0 }}>
-                  <label className="input-label" style={{ fontSize: '0.8rem', color: '#65676B', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Message / Requirements (Optional)</label>
+                  <label className="input-label" style={{ fontSize: '0.8rem', color: '#4B5563', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Message / Requirements (Optional)</label>
                   <textarea 
                     placeholder="Tell us what you need..."
                     value={leadForm.message}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
                     className="input-field"
                     rows={3}
-                    style={{ background: '#FFFFFF', border: '1px solid #CCD0D5', width: '100%', color: '#050505', borderRadius: '10px', resize: 'vertical' }}
+                    style={{ background: '#FFFFFF', border: '1px solid #CCD0D5', width: '100%', color: '#1F2937', borderRadius: '10px', resize: 'vertical' }}
                   />
                 </div>
 

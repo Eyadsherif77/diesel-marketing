@@ -14,8 +14,8 @@
   --bg-admin: #F0F2F5; /* Facebook light background */
   --card-admin: #FFFFFF; /* Pure White Card */
   --border-admin: #E4E6EB; /* Facebook borders */
-  --text-admin-primary: #050505;
-  --text-admin-secondary: #65676B;
+  --text-admin-primary: #1F2937;
+  --text-admin-secondary: #4B5563;
 }
 
 * {
@@ -29,7 +29,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #F0F2F5;
-  color: #050505;
+  color: #1F2937;
   overflow-x: hidden;
 }
 
@@ -367,20 +367,17 @@ button, input, select, textarea {
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
-  background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, rgba(0, 0, 0, 0) 40%),
-              radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.1) 0%, rgba(0, 0, 0, 0) 50%),
-              #030712;
+  background: #F0F2F5;
 }
 
 .buy-card-box {
   width: 100%;
   max-width: 480px;
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #FFFFFF;
+  border: 1px solid #E4E6EB;
   border-radius: 28px;
   padding: 2.5rem 2rem;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
   animation: scaleUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -394,7 +391,7 @@ button, input, select, textarea {
   font-size: 0.85rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
-  color: #94a3b8;
+  color: #4B5563;
 }
 
 .input-field {
@@ -403,7 +400,7 @@ button, input, select, textarea {
   background: #FFFFFF;
   border: 1px solid #CCD0D5;
   border-radius: 12px;
-  color: #050505;
+  color: #1F2937;
   font-size: 0.95rem;
   outline: none;
   transition: all 0.2s ease;
@@ -590,7 +587,7 @@ button, input, select, textarea {
 .admin-btn-secondary {
   background: #F0F2F5;
   border: 1px solid var(--border-admin);
-  color: #050505;
+  color: #1F2937;
 }
 
 .admin-btn-secondary:hover {
@@ -639,7 +636,7 @@ button, input, select, textarea {
   padding: 1.1rem 1rem;
   border-bottom: 1px solid var(--border-admin);
   font-size: 0.95rem;
-  color: #050505;
+  color: #1F2937;
   vertical-align: middle;
 }
 
@@ -706,7 +703,7 @@ button, input, select, textarea {
   padding: 2rem;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
   animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  color: #050505;
+  color: #1F2937;
 }
 
 .modal-header {
@@ -733,7 +730,7 @@ button, input, select, textarea {
 
 .modal-close-btn:hover {
   background: #F2F2F2;
-  color: #050505;
+  color: #1F2937;
 }
 
 /* Tabs inside editing forms */
@@ -755,7 +752,7 @@ button, input, select, textarea {
 }
 
 .form-tab-btn:hover {
-  color: #050505;
+  color: #1F2937;
 }
 
 .form-tab-btn.active {
@@ -792,7 +789,7 @@ button, input, select, textarea {
   border: 1px solid var(--border-admin);
   padding: 0.75rem;
   border-radius: 10px;
-  color: #050505;
+  color: #1F2937;
 }
 
 /* Preset Picker */

@@ -146,43 +146,43 @@ export const BuyCard: React.FC = () => {
   if (isSubmitted) {
     const finalPhone = localPhone.trim() ? selectedCountry.dialCode + localPhone.replace(/[^0-9]/g, '') : '';
     return (
-      <div className="buy-page-container">
-        <div className="buy-card-box success-card animate-fade-in">
-          <div className="success-icon-container">
+      <div className="buy-page-container" style={{ background: '#F0F2F5' }}>
+        <div className="buy-card-box success-card animate-fade-in" style={{ background: '#FFFFFF', border: '1px solid #E4E6EB', color: '#1F2937' }}>
+          <div className="success-icon-container" style={{ background: 'rgba(66, 183, 42, 0.1)', border: '2px solid var(--success-color)', color: 'var(--success-color)' }}>
             <Icons.CheckCircle size={36} />
           </div>
           
-          <h2 style={{ fontSize: '1.8rem', marginBottom: '1rem', fontFamily: 'var(--font-display)' }}>
+          <h2 style={{ fontSize: '1.8rem', marginBottom: '1rem', fontFamily: 'var(--font-display)', color: '#1F2937' }}>
             Order Placed!
           </h2>
           
-          <p style={{ opacity: 0.9, lineHeight: '1.6', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+          <p style={{ color: '#4B5563', lineHeight: '1.6', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
             Thank you! Someone from the DevTech team will call your registered number soon to confirm. Your custom <strong>DevTech NFC Card</strong> is being processed.
           </p>
 
-          <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', marginBottom: '2rem', textAlign: 'left', fontSize: '0.85rem' }}>
+          <div style={{ background: '#F0F2F5', padding: '1rem', borderRadius: '12px', border: '1px solid #E4E6EB', marginBottom: '2rem', textAlign: 'left', fontSize: '0.85rem' }}>
             {username.trim() && (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <span style={{ color: '#94a3b8' }}>Desired Username:</span>
-                <span style={{ fontWeight: 'bold' }}>@{username.toLowerCase().replace(/\s+/g, '-')}</span>
+                <span style={{ color: '#4B5563' }}>Desired Username:</span>
+                <span style={{ fontWeight: 'bold', color: '#1F2937' }}>@{username.toLowerCase().replace(/\s+/g, '-')}</span>
               </div>
             )}
             {email.trim() && (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <span style={{ color: '#94a3b8' }}>Email Address:</span>
-                <span>{email}</span>
+                <span style={{ color: '#4B5563' }}>Email Address:</span>
+                <span style={{ color: '#1F2937' }}>{email}</span>
               </div>
             )}
             {finalPhone && (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <span style={{ color: '#94a3b8' }}>Contact Number:</span>
+                <span style={{ color: '#4B5563' }}>Contact Number:</span>
                 <span style={{ fontWeight: 'bold', color: 'var(--success-color)' }}>{finalPhone} ({selectedCountry.name})</span>
               </div>
             )}
             {referralVendor && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#94a3b8' }}>Referred By:</span>
-                <span>@{referralVendor}</span>
+                <span style={{ color: '#4B5563' }}>Referred By:</span>
+                <span style={{ color: '#1F2937' }}>@{referralVendor}</span>
               </div>
             )}
           </div>
@@ -205,16 +205,16 @@ export const BuyCard: React.FC = () => {
   }
 
   return (
-    <div className="buy-page-container">
-      <div className="buy-card-box animate-fade-in">
+    <div className="buy-page-container" style={{ background: '#F0F2F5' }}>
+      <div className="buy-card-box animate-fade-in" style={{ background: '#FFFFFF', border: '1px solid #E4E6EB', color: '#1F2937' }}>
         
         {/* Page Header */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{ display: 'inline-flex', padding: '10px', background: 'rgba(99, 102, 241, 0.15)', borderRadius: '16px', color: 'var(--primary-color)', marginBottom: '1rem' }}>
+          <div style={{ display: 'inline-flex', padding: '10px', background: '#E7F3FF', borderRadius: '16px', color: 'var(--primary-color)', marginBottom: '1rem' }}>
             <Icons.CreditCard size={28} />
           </div>
-          <h2 style={{ fontSize: '1.8rem', fontFamily: 'var(--font-display)', marginBottom: '0.5rem' }}>Order NFC Smart Card</h2>
-          <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Provide at least two details (Username, Email, or Phone Number) to place an order.</p>
+          <h2 style={{ fontSize: '1.8rem', fontFamily: 'var(--font-display)', marginBottom: '0.5rem', color: '#1F2937' }}>Order NFC Smart Card</h2>
+          <p style={{ color: '#4B5563', fontSize: '0.9rem' }}>Provide at least two details (Username, Email, or Phone Number) to place an order.</p>
         </div>
 
         {error && (
@@ -227,9 +227,9 @@ export const BuyCard: React.FC = () => {
         <form onSubmit={handleSubmit}>
           
           <div className="input-group">
-            <label className="input-label">Desired Profile Username (Optional)</label>
+            <label className="input-label" style={{ color: '#4B5563' }}>Desired Profile Username (Optional)</label>
             <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '0.95rem' }}>@</span>
+              <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#4B5563', fontSize: '0.95rem' }}>@</span>
               <input 
                 type="text" 
                 placeholder="alex-devtech"
@@ -239,11 +239,11 @@ export const BuyCard: React.FC = () => {
                 style={{ paddingLeft: '2.1rem' }}
               />
             </div>
-            <p style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.35rem' }}>E.g. devtech.com/#/your-username</p>
+            <p style={{ fontSize: '0.7rem', color: '#4B5563', marginTop: '0.35rem' }}>E.g. devtech.com/#/your-username</p>
           </div>
 
           <div className="input-group">
-            <label className="input-label">Email Address (Optional)</label>
+            <label className="input-label" style={{ color: '#4B5563' }}>Email Address (Optional)</label>
             <input 
               type="email" 
               placeholder="alex@example.com"
@@ -254,7 +254,7 @@ export const BuyCard: React.FC = () => {
           </div>
 
           <div className="input-group phone-container" style={{ position: 'relative' }}>
-            <label className="input-label">Mobile / WhatsApp Phone Number (Optional)</label>
+            <label className="input-label" style={{ color: '#4B5563' }}>Mobile / WhatsApp Phone Number (Optional)</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               
               {/* Flag selection button */}
@@ -270,10 +270,10 @@ export const BuyCard: React.FC = () => {
                   gap: '6px',
                   cursor: 'pointer',
                   paddingInline: '8px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: '#FFFFFF',
+                  border: '1px solid #CCD0D5',
                   borderRadius: '12px',
-                  color: '#fff',
+                  color: '#1F2937',
                   flexShrink: 0
                 }}
               >
@@ -312,16 +312,16 @@ export const BuyCard: React.FC = () => {
                 left: 0,
                 zIndex: 100,
                 width: '100%',
-                background: '#161c2a',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
+                background: '#FFFFFF',
+                border: '1px solid #E4E6EB',
                 borderRadius: '14px',
-                boxShadow: '0 12px 30px rgba(0,0,0,0.6)',
+                boxShadow: '0 12px 28px rgba(0,0,0,0.15)',
                 padding: '8px',
                 maxHeight: '250px',
                 overflowY: 'auto'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', position: 'relative' }}>
-                  <Icons.Search size={14} style={{ position: 'absolute', left: '10px', color: '#94a3b8' }} />
+                  <Icons.Search size={14} style={{ position: 'absolute', left: '10px', color: '#4B5563' }} />
                   <input
                     type="text"
                     placeholder="Search country name or code..."
@@ -331,7 +331,8 @@ export const BuyCard: React.FC = () => {
                     style={{
                       padding: '0.5rem 0.5rem 0.5rem 2rem',
                       fontSize: '0.85rem',
-                      background: 'rgba(255,255,255,0.03)',
+                      background: '#F0F2F5',
+                      border: '1px solid #CCD0D5',
                       margin: 0,
                       borderRadius: '8px'
                     }}
@@ -361,15 +362,15 @@ export const BuyCard: React.FC = () => {
                       borderRadius: '8px',
                       cursor: 'pointer',
                       fontSize: '0.9rem',
-                      color: 'white',
+                      color: '#1F2937',
                       transition: 'background 0.2s'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F2F2F2'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     <span style={{ fontSize: '1.25rem' }}>{c.flag}</span>
                     <span style={{ fontWeight: '500' }}>{c.name}</span>
-                    <span style={{ marginLeft: 'auto', opacity: 0.6, fontSize: '0.85rem' }}>{c.dialCode}</span>
+                    <span style={{ marginLeft: 'auto', opacity: 0.6, fontSize: '0.85rem', color: '#4B5563' }}>{c.dialCode}</span>
                   </div>
                 ))}
               </div>
@@ -378,13 +379,13 @@ export const BuyCard: React.FC = () => {
 
           {referralVendor && (
             <div className="input-group">
-              <label className="input-label">Referral Partner</label>
+              <label className="input-label" style={{ color: '#4B5563' }}>Referral Partner</label>
               <input 
                 type="text" 
                 value={`@${referralVendor}`}
                 disabled
                 className="input-field"
-                style={{ opacity: 0.6, background: 'rgba(255, 255, 255, 0.02)', borderStyle: 'dashed' }}
+                style={{ opacity: 0.6, background: '#F0F2F5', borderStyle: 'dashed', border: '1px solid #CCD0D5', color: '#4B5563' }}
               />
             </div>
           )}

@@ -5,7 +5,7 @@
 .lp-root {
   min-height: 100vh;
   background: #F0F2F5;
-  color: #050505;
+  color: #1F2937;
   font-family: var(--font-primary);
   overflow-x: hidden;
 }
@@ -90,7 +90,7 @@
 .lp-nav-links button {
   background: transparent;
   border: none;
-  color: #65676B;
+  color: #4B5563;
   font-family: var(--font-display);
   font-size: 0.95rem;
   font-weight: 700;
@@ -146,9 +146,9 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   }
   .lp-nav-links.open { display: flex; }
-  .lp-nav-links button { width: 100%; text-align: left; padding: 0.75rem 1rem; color: #050505; }
+  .lp-nav-links button { width: 100%; text-align: left; padding: 0.75rem 1rem; color: #1F2937; }
   .lp-nav-cta { display: none; }
-  .lp-nav-burger { display: flex; color: #050505; }
+  .lp-nav-burger { display: flex; color: #1F2937; }
 }
 
 /* ─── NFC Card Dropdown ──────────────────────────────────── */
@@ -216,7 +216,7 @@
   padding: 0.7rem 0.75rem;
   border-radius: 12px;
   text-decoration: none;
-  color: #050505;
+  color: #1F2937;
   transition: all 0.2s ease;
   cursor: pointer;
 }
@@ -240,12 +240,12 @@
 .lp-nfc-menu-title {
   font-size: 0.88rem;
   font-weight: 700;
-  color: #050505;
+  color: #1F2937;
   line-height: 1.2;
 }
 .lp-nfc-menu-sub {
   font-size: 0.75rem;
-  color: #65676B;
+  color: #4B5563;
   margin-top: 1px;
 }
 
@@ -280,7 +280,7 @@
   align-items: center;
   gap: 8px;
   padding: 0.65rem 1rem;
-  color: #65676B;
+  color: #4B5563;
   text-decoration: none;
   font-size: 0.9rem;
   border-radius: 8px;
@@ -406,11 +406,11 @@
   line-height: 1.15;
   letter-spacing: -0.03em;
   margin-bottom: 1rem;
-  color: #050505;
+  color: #1F2937;
 }
 
 .lp-section-subtitle {
-  color: #65676B;
+  color: #4B5563;
   font-size: 1.05rem;
   line-height: 1.7;
   max-width: 580px;
@@ -515,13 +515,13 @@
   line-height: 1.15;
   letter-spacing: -0.02em;
   margin-bottom: 1.5rem;
-  color: #050505;
+  color: #1F2937;
   animation: fadeInUp 0.8s ease forwards;
 }
 
 .lp-hero-subtitle {
   font-size: 1.15rem;
-  color: #65676B;
+  color: #4B5563;
   line-height: 1.7;
   margin-bottom: 2.5rem;
   animation: fadeInUp 0.8s ease 0.2s both;
@@ -682,7 +682,7 @@
 .lp-stat-label {
   display: block;
   font-size: 0.8rem;
-  color: #65676B;
+  color: #4B5563;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -740,7 +740,7 @@
 }
 
 .lp-about-desc {
-  color: #65676B;
+  color: #4B5563;
   font-size: 1rem;
   line-height: 1.8;
   margin-bottom: 1rem;
@@ -752,7 +752,7 @@
   align-items: center;
   gap: 0.75rem;
   font-size: 0.95rem;
-  color: #050505;
+  color: #1F2937;
 }
 
 .lp-about-visual {
@@ -792,9 +792,9 @@
   font-size: 1.1rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
-  color: #050505;
+  color: #1F2937;
 }
-.lp-about-card p { color: #65676B; font-size: 0.9rem; line-height: 1.6; }
+.lp-about-card p { color: #4B5563; font-size: 0.9rem; line-height: 1.6; }
 
 /* ─── Features Grid ──────────────────────────────────────── */
 .lp-features-grid {
@@ -835,8 +835,8 @@
   justify-content: center;
   margin-bottom: 1.25rem;
 }
-.lp-feature-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.6rem; color: #050505; }
-.lp-feature-desc { color: #65676B; font-size: 0.9rem; line-height: 1.6; }
+.lp-feature-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.6rem; color: #1F2937; }
+.lp-feature-desc { color: #4B5563; font-size: 0.9rem; line-height: 1.6; }
 .lp-feature-sub {
   list-style: none;
   padding: 0;
@@ -850,7 +850,7 @@
   align-items: center;
   gap: 5px;
   font-size: 0.8rem;
-  color: #65676B;
+  color: #4B5563;
   line-height: 1.4;
 }
 
@@ -906,7 +906,7 @@
   gap: 0.5rem;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #65676B;
+  color: #4B5563;
   margin-bottom: 1.25rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid #E4E6EB;
@@ -935,8 +935,8 @@
   justify-content: center;
   flex-shrink: 0;
 }
-.lp-mini-stat-val { font-size: 1rem; font-weight: 800; color: #050505; line-height: 1; }
-.lp-mini-stat-label { font-size: 0.65rem; color: #65676B; margin-top: 2px; }
+.lp-mini-stat-val { font-size: 1rem; font-weight: 800; color: #1F2937; line-height: 1; }
+.lp-mini-stat-label { font-size: 0.65rem; color: #4B5563; margin-top: 2px; }
 
 .lp-mini-chart {
   display: flex;
@@ -984,8 +984,8 @@
   justify-content: center;
   margin: 0 auto 1rem;
 }
-.lp-client-name { font-size: 1.05rem; font-weight: 700; color: #050505; margin-bottom: 0.5rem; }
-.lp-client-desc { font-size: 0.875rem; color: #65676B; line-height: 1.6; }
+.lp-client-name { font-size: 1.05rem; font-weight: 700; color: #1F2937; margin-bottom: 0.5rem; }
+.lp-client-desc { font-size: 0.875rem; color: #4B5563; line-height: 1.6; }
 
 /* ─── Contact ────────────────────────────────────────────── */
 .lp-contact-grid {
@@ -1006,7 +1006,7 @@
   align-items: center;
   gap: 0.85rem;
   font-size: 0.95rem;
-  color: #050505;
+  color: #1F2937;
 }
 .lp-contact-detail-link {
   color: inherit;
@@ -1045,8 +1045,8 @@
   align-items: center;
   gap: 0.75rem;
 }
-.lp-contact-success h3 { font-size: 1.3rem; color: #050505; }
-.lp-contact-success p { color: #65676B; }
+.lp-contact-success h3 { font-size: 1.3rem; color: #1F2937; }
+.lp-contact-success p { color: #4B5563; }
 
 /* ─── Footer ─────────────────────────────────────────────── */
 .lp-footer {
@@ -1097,7 +1097,7 @@
 }
 .lp-footer-links a {
   font-size: 0.85rem;
-  color: #65676B;
+  color: #4B5563;
   text-decoration: none;
   transition: color 0.2s;
 }
@@ -1106,7 +1106,7 @@
   background: transparent;
   border: none;
   font-size: 0.85rem;
-  color: #65676B;
+  color: #4B5563;
   cursor: pointer;
   transition: color 0.2s;
   padding: 0;
@@ -1181,7 +1181,7 @@
   background: transparent;
   border: 1px solid #E4E6EB;
   border-radius: 50px;
-  color: #65676B;
+  color: #4B5563;
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s;
@@ -1202,11 +1202,11 @@
   font-family: var(--font-display);
   font-size: 2.1rem;
   font-weight: 800;
-  color: #050505;
+  color: #1F2937;
   margin-bottom: 0.45rem;
   letter-spacing: -0.02em;
 }
-.dash-page-sub { color: #65676B; font-size: 0.95rem; font-weight: 500; }
+.dash-page-sub { color: #4B5563; font-size: 0.95rem; font-weight: 500; }
 
 /* Stats Cards */
 .dash-stats-grid {
@@ -1262,12 +1262,12 @@
   font-family: var(--font-display);
   font-size: 2.4rem;
   font-weight: 900;
-  color: #050505;
+  color: #1F2937;
   line-height: 1;
   margin-bottom: 0.4rem;
   letter-spacing: -0.02em;
 }
-.dash-stat-label { font-size: 0.8rem; color: #65676B; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.dash-stat-label { font-size: 0.8rem; color: #4B5563; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
 .dash-stat-trend {
   position: absolute;
   top: 1.35rem;
@@ -1281,7 +1281,7 @@
   border-radius: 20px;
 }
 .dash-stat-trend.up { color: #42B72A; background: rgba(66,183,42,0.1); }
-.dash-stat-trend.neutral { color: #65676B; }
+.dash-stat-trend.neutral { color: #4B5563; }
 
 /* Chart */
 .dash-chart-card {
@@ -1300,7 +1300,7 @@
   flex-wrap: wrap;
   gap: 1rem;
 }
-.dash-chart-title { font-size: 1.05rem; font-weight: 700; color: #050505; letter-spacing: -0.01em; }
+.dash-chart-title { font-size: 1.05rem; font-weight: 700; color: #1F2937; letter-spacing: -0.01em; }
 .dash-chart-tabs {
   display: flex;
   gap: 0.35rem;
@@ -1314,7 +1314,7 @@
   border-radius: 9px;
   border: none;
   background: transparent;
-  color: #65676B;
+  color: #4B5563;
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
@@ -1375,7 +1375,7 @@
   flex: 1;
   text-align: center;
   font-size: 0.64rem;
-  color: #65676B;
+  color: #4B5563;
   white-space: nowrap;
   overflow: hidden;
 }
@@ -1394,7 +1394,7 @@
   align-items: center;
   gap: 0.45rem;
   font-size: 0.78rem;
-  color: #65676B;
+  color: #4B5563;
   font-weight: 500;
 }
 .dash-legend-dot {
@@ -1427,7 +1427,7 @@
 .dash-card-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #050505;
+  color: #1F2937;
   margin-bottom: 1.35rem;
   display: flex;
   align-items: center;
@@ -1448,8 +1448,8 @@
   border-radius: 50%;
   flex-shrink: 0;
 }
-.dash-activity-text { flex: 1; font-size: 0.88rem; color: #050505; font-weight: 500; }
-.dash-activity-time { font-size: 0.75rem; color: #65676B; }
+.dash-activity-text { flex: 1; font-size: 0.88rem; color: #1F2937; font-weight: 500; }
+.dash-activity-time { font-size: 0.75rem; color: #4B5563; }
 
 /* Vendor Table */
 .dash-vendor-table {
@@ -1466,7 +1466,7 @@
   padding: 0.9rem 1.35rem;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #65676B;
+  color: #4B5563;
   text-transform: uppercase;
   letter-spacing: 0.07em;
   text-align: left;
@@ -1476,7 +1476,7 @@
 .dash-table td {
   padding: 1.05rem 1.35rem;
   font-size: 0.9rem;
-  color: #050505;
+  color: #1F2937;
   border-bottom: 1px solid #E4E6EB;
   vertical-align: middle;
 }
@@ -1487,7 +1487,7 @@
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  color: #050505;
+  color: #1F2937;
   font-weight: 600;
 }
 .dash-vendor-avatar {
@@ -1510,7 +1510,7 @@
 .dash-rank-1 { background: rgba(251,191,36,0.2); color: #b45309; box-shadow: 0 0 8px rgba(251,191,36,0.15); }
 .dash-rank-2 { background: rgba(148,163,184,0.15); color: #475569; }
 .dash-rank-3 { background: rgba(180,83,9,0.15); color: #b45309; }
-.dash-rank-n { background: rgba(0,0,0,0.05); color: #65676B; }
+.dash-rank-n { background: rgba(0,0,0,0.05); color: #4B5563; }
 
 /* Login Page */
 .auth-page {
@@ -1530,7 +1530,7 @@
   padding: 2.75rem 2.25rem;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
   animation: scaleUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
-  color: #050505;
+  color: #1F2937;
 }
 .auth-icon {
   width: 64px; height: 64px;
@@ -1543,13 +1543,13 @@
   background: #e7f3ff;
   color: #1877F2;
 }
-.auth-title { font-family: var(--font-display); font-size: 1.85rem; font-weight: 800; text-align: center; margin-bottom: 0.45rem; letter-spacing: -0.02em; color: #050505; }
-.auth-sub { color: #65676B; font-size: 0.9rem; text-align: center; margin-bottom: 2.25rem; }
+.auth-title { font-family: var(--font-display); font-size: 1.85rem; font-weight: 800; text-align: center; margin-bottom: 0.45rem; letter-spacing: -0.02em; color: #1F2937; }
+.auth-sub { color: #4B5563; font-size: 0.9rem; text-align: center; margin-bottom: 2.25rem; }
 .auth-back {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  color: #65676B;
+  color: #4B5563;
   font-size: 0.85rem;
   text-decoration: none;
   margin-bottom: 1.5rem;

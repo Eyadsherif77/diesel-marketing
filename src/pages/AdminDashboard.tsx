@@ -515,7 +515,7 @@ export const AdminDashboard: React.FC = () => {
           style={{
             background: 'transparent',
             border: 'none',
-            color: 'white',
+            color: 'var(--text-admin-primary)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -766,7 +766,7 @@ export const AdminDashboard: React.FC = () => {
                           <td>{new Date(order.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                           <td>
                             {order.username ? (
-                              <strong style={{ color: 'white' }}>@{order.username}</strong>
+                              <strong style={{ color: 'var(--text-admin-primary)' }}>@{order.username}</strong>
                             ) : (
                               <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.85rem' }}>Auto-Generated</span>
                             )}
@@ -778,7 +778,7 @@ export const AdminDashboard: React.FC = () => {
                             <select 
                               value={order.status}
                               onChange={(e) => updateOrderStatus(order.id, e.target.value as CardOrder['status'])}
-                              style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}
+                              style={{ background: '#FFFFFF', color: 'var(--text-admin-primary)', border: '1px solid var(--border-admin)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}
                             >
                               <option value="pending">⏳ Pending Approval</option>
                               <option value="contacted">📞 Contacted Client</option>
@@ -902,7 +902,7 @@ export const AdminDashboard: React.FC = () => {
                                   triggerAlert('error', `Error updating: ${error.message}`);
                                 }
                               }}
-                              style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}
+                              style={{ background: '#FFFFFF', color: 'var(--text-admin-primary)', border: '1px solid var(--border-admin)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}
                             />
                           </div>
                         </div>
@@ -955,7 +955,7 @@ export const AdminDashboard: React.FC = () => {
                         <div key={a.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '0.75rem 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '0.85rem' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
-                              <span style={{ color: '#f1f5f9', fontWeight: 600 }}>@{a.username}</span>
+                              <span style={{ color: 'var(--text-admin-primary)', fontWeight: 600 }}>@{a.username}</span>
                               <span style={{ color: '#818cf8', marginLeft: '0.5rem', fontSize: '0.78rem' }}>→ @{a.vendor_username}</span>
                             </div>
                             <span style={{ fontSize: '0.72rem', color: '#475569' }}>{new Date(a.created_at).toLocaleDateString()}</span>
@@ -980,7 +980,7 @@ export const AdminDashboard: React.FC = () => {
                                   triggerAlert('error', `Error updating: ${error.message}`);
                                 }
                               }}
-                              style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}
+                              style={{ background: '#FFFFFF', color: 'var(--text-admin-primary)', border: '1px solid var(--border-admin)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}
                             />
                           </div>
                         </div>
@@ -1075,7 +1075,7 @@ export const AdminDashboard: React.FC = () => {
                         leads.map(lead => (
                           <tr key={lead.id}>
                             <td>{new Date(lead.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
-                            <td><strong style={{ color: 'white' }}>{lead.name}</strong></td>
+                            <td><strong style={{ color: 'var(--text-admin-primary)' }}>{lead.name}</strong></td>
                             <td>{lead.phone || <span style={{ opacity: 0.3 }}>—</span>}</td>
                             <td>{lead.email || <span style={{ opacity: 0.3 }}>—</span>}</td>
                             <td>{lead.company || <span style={{ opacity: 0.4 }}>None</span>}</td>
@@ -1471,7 +1471,7 @@ export const AdminDashboard: React.FC = () => {
 
                     {vendorTheme.preset === 'custom' && (
                       <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-admin)', marginBottom: '1.5rem', animation: 'fadeInUp 0.2s ease' }}>
-                        <h4 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: 'white' }}>Custom Gradient & Text Settings</h4>
+                        <h4 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: 'var(--text-admin-primary)' }}>Custom Gradient & Text Settings</h4>
                         
                         <div className="admin-grid-2" style={{ marginBottom: '1rem' }}>
                           <div className="input-group" style={{ marginBottom: 0 }}>
@@ -1595,7 +1595,7 @@ export const AdminDashboard: React.FC = () => {
                 {activeFormTab === 'tabs' && (
                   <div style={{ animation: 'fadeInUp 0.2s ease', maxHeight: '50vh', overflowY: 'auto', paddingRight: '4px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                      <h4 style={{ fontSize: '0.95rem', color: 'white' }}>Standard & Social Links</h4>
+                      <h4 style={{ fontSize: '0.95rem', color: 'var(--text-admin-primary)' }}>Standard & Social Links</h4>
                       <button 
                         type="button" 
                         className="admin-btn"
@@ -1619,7 +1619,7 @@ export const AdminDashboard: React.FC = () => {
                             style={{ width: '18px', height: '18px', cursor: 'pointer', marginTop: '8px' }}
                           />
                           
-                          <div style={{ width: '100px', fontSize: '0.85rem', fontWeight: 600, color: 'white', textTransform: 'capitalize', paddingTop: '8px' }}>
+                          <div style={{ width: '100px', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-admin-primary)', textTransform: 'capitalize', paddingTop: '8px' }}>
                             {tab.type}
                           </div>
 
@@ -1637,7 +1637,7 @@ export const AdminDashboard: React.FC = () => {
                                 className="input-field"
                                 style={{ padding: '0.45rem 0.75rem', fontSize: '0.85rem', flexGrow: 1 }}
                               />
-                              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-admin-secondary)', whiteSpace: 'nowrap', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <span style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc', padding: '2px 8px', borderRadius: '6px', fontWeight: 600 }}>{tab.label}</span>
                               </div>
                               <button 
@@ -1735,7 +1735,7 @@ export const AdminDashboard: React.FC = () => {
               <div style={{ display: 'inline-flex', padding: '12px', background: 'rgba(16, 185, 129, 0.15)', borderRadius: '50%', color: 'var(--success-color)', marginBottom: '1rem' }}>
                 <Icons.Send size={28} />
               </div>
-              <h3 style={{ fontSize: '1.4rem', fontFamily: 'var(--font-display)', marginBottom: '0.5rem', color: 'white' }}>SMS Notification Dispatched</h3>
+              <h3 style={{ fontSize: '1.4rem', fontFamily: 'var(--font-display)', marginBottom: '0.5rem', color: 'var(--text-admin-primary)' }}>SMS Notification Dispatched</h3>
               <p style={{ color: 'var(--text-admin-secondary)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
                 A custom registration confirmation has been successfully simulated and sent to the client's device:
               </p>
