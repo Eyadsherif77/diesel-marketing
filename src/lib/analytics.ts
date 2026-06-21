@@ -221,3 +221,120 @@ export async function fetchMultiVendorSummary(
 
   return result;
 }
+
+export interface RecentEvent {
+  id: string;
+  vendor_username: string;
+  event_type: EventType;
+  link_type: string | null;
+  created_at: string;
+}
+
+export async function fetchRecentEvents(
+  vendorUsername: string,
+  limit = 12,
+  since?: string
+): Promise<RecentEvent[]> {
+  let query = supabase
+    .from('vendor_analytics')
+    .select('id, vendor_username, event_type, link_type, created_at')
+    .eq('vendor_username', vendorUsername)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (since) {
+    query = query.gte('created_at', since);
+  }
+
+  const { data, error } = await query;
+  if (error || !data) return [];
+  return data as RecentEvent[];
+}
+
+export async function fetchRecentEventsMulti(
+  vendorUsernames: string[],
+  limit = 15,
+  since?: string
+): Promise<RecentEvent[]> {
+  if (vendorUsernames.length === 0) return [];
+
+  let query = supabase
+    .from('vendor_analytics')
+    .select('id, vendor_username, event_type, link_type, created_at')
+    .in('vendor_username', vendorUsernames)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (since) {
+    query = query.gte('created_at', since);
+  }
+
+  const { data, error } = await query;
+  if (error || !data) return [];
+  return data as RecentEvent[];
+}
+
+export function groupDailyPoints(
+  data: DailyPoint[],
+  groupBy: 'daily' | 'weekly' | 'monthly'
+): DailyPoint[] {
+  if (groupBy === 'daily') return data;
+
+  if (groupBy === 'weekly') {
+    const sorted = [...data].sort((a, b) => a.date.localeCompare(b.date));
+    const result: DailyPoint[] = [];
+    
+    // Group backward from the last element (most recent) in chunks of 7
+    let chunk: DailyPoint[] = [];
+    for (let i = sorted.length - 1; i >= 0; i--) {
+      chunk.push(sorted[i]);
+      if (chunk.length === 7 || i === 0) {
+        const chronologicalChunk = [...chunk].reverse();
+        const firstDate = chronologicalChunk[0].date;
+        const dateObj = new Date(firstDate);
+        const label = `Wk of ${dateObj.toLocaleDateString('en', { month: 'short', day: 'numeric' })}`;
+        
+        result.push({
+          date: label,
+          profile_view: chunk.reduce((sum, p) => sum + p.profile_view, 0),
+          qr_scan: chunk.reduce((sum, p) => sum + p.qr_scan, 0),
+          link_click: chunk.reduce((sum, p) => sum + p.link_click, 0),
+          pdf_download: chunk.reduce((sum, p) => sum + p.pdf_download, 0),
+          vcf_download: chunk.reduce((sum, p) => sum + p.vcf_download, 0),
+          phone_click: chunk.reduce((sum, p) => sum + p.phone_click, 0),
+        });
+        chunk = [];
+      }
+    }
+    return result.reverse();
+  }
+
+  if (groupBy === 'monthly') {
+    const groups: Record<string, DailyPoint[]> = {};
+    for (const pt of data) {
+      const monthKey = pt.date.slice(0, 7); // "YYYY-MM"
+      if (!groups[monthKey]) groups[monthKey] = [];
+      groups[monthKey].push(pt);
+    }
+
+    const sortedMonthKeys = Object.keys(groups).sort();
+    return sortedMonthKeys.map(key => {
+      const pts = groups[key];
+      const [year, month] = key.split('-');
+      const dateObj = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const label = dateObj.toLocaleDateString('en', { month: 'short', year: 'numeric' });
+      
+      return {
+        date: label,
+        profile_view: pts.reduce((sum, p) => sum + p.profile_view, 0),
+        qr_scan: pts.reduce((sum, p) => sum + p.qr_scan, 0),
+        link_click: pts.reduce((sum, p) => sum + p.link_click, 0),
+        pdf_download: pts.reduce((sum, p) => sum + p.pdf_download, 0),
+        vcf_download: pts.reduce((sum, p) => sum + p.vcf_download, 0),
+        phone_click: pts.reduce((sum, p) => sum + p.phone_click, 0),
+      };
+    });
+  }
+
+  return data;
+}

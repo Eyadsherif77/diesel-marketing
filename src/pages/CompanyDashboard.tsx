@@ -5,10 +5,38 @@ import { supabase } from '../lib/supabase';
 import {
   fetchMultiVendorSummary,
   fetchDailyAnalytics,
+  fetchRecentEventsMulti,
+  groupDailyPoints,
   type AnalyticsSummary,
   type DailyPoint,
+  type RecentEvent,
 } from '../lib/analytics';
 import '../styles/landing.css';
+
+const EVENT_META: Record<string, { label: string; icon: string; color: string }> = {
+  profile_view: { label: 'Profile viewed', icon: 'Eye', color: '#7660F1' },
+  qr_scan: { label: 'QR Code scanned', icon: 'QrCode', color: '#06B6D4' },
+  link_click: { label: 'Link clicked', icon: 'MousePointer', color: '#2563EB' },
+  pdf_download: { label: 'PDF downloaded', icon: 'FileText', color: '#ec4899' },
+  vcf_download: { label: 'Contact saved', icon: 'UserPlus', color: '#10b981' },
+  phone_click: { label: 'Phone clicked', icon: 'Phone', color: '#a855f7' },
+};
+
+function timeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  if (seconds < 5) return 'Just now';
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Yesterday';
+  return `${days}d ago`;
+}
 
 interface Session {
   username: string;
@@ -41,6 +69,8 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
   const [chartRange, setChartRange] = useState<7 | 30>(7);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<keyof AnalyticsSummary>('profile_views');
+  const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([]);
+  const [chartGrouping, setChartGrouping] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
   // Subscription & Reset States
   const [subExpiry, setSubExpiry] = useState<string | null>(null);
@@ -103,7 +133,6 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
     return () => { isMounted = false; };
   }, [session, vendors]);
 
-  // 2. Fetch summaries and selected vendor chart data when resetTimestamp, statView, chartRange, or selectedVendor changes
   useEffect(() => {
     if (!session || resetTimestamp === undefined || companyVendors.length === 0) return;
 
@@ -113,13 +142,22 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
       try {
         const sinceFilter = (statView === 'current' && resetTimestamp) ? resetTimestamp : undefined;
         
-        const sums = await fetchMultiVendorSummary(companyVendors.map(v => v.username), sinceFilter);
-        
         const currentSel = selectedVendor && companyVendors.some(v => v.username === selectedVendor)
           ? selectedVendor
           : companyVendors[0].username;
 
-        const daily = await fetchDailyAnalytics(currentSel, chartRange, sinceFilter);
+        // Fetch longer range if grouping by week/month to get a trend
+        const queryDays = chartGrouping === 'daily'
+          ? chartRange
+          : chartGrouping === 'weekly'
+            ? 84
+            : 180;
+
+        const [sums, daily, events] = await Promise.all([
+          fetchMultiVendorSummary(companyVendors.map(v => v.username), sinceFilter),
+          fetchDailyAnalytics(currentSel, queryDays, sinceFilter),
+          fetchRecentEventsMulti(companyVendors.map(v => v.username), 15, sinceFilter)
+        ]);
 
         if (isMounted) {
           setSummaries(sums);
@@ -127,6 +165,7 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
             setSelectedVendor(currentSel);
           }
           setVendorDaily(daily);
+          setRecentEvents(events);
         }
       } catch (err) {
         console.error('Failed to load company analytics:', err);
@@ -137,7 +176,7 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
 
     fetchAnalytics();
     return () => { isMounted = false; };
-  }, [session, companyVendors, resetTimestamp, statView, chartRange, selectedVendor]);
+  }, [session, companyVendors, resetTimestamp, statView, chartRange, selectedVendor, chartGrouping]);
 
   useEffect(() => {
     const raw = sessionStorage.getItem('devtech_company_session');
@@ -220,9 +259,15 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
   });
 
   // Chart
-  const maxVal = Math.max(...vendorDaily.map(d => d.profile_view + d.qr_scan + d.link_click), 1);
-  const slicedDaily = vendorDaily.slice(-chartRange);
-  const formatDate = (str: string) => new Date(str).toLocaleDateString('en', { month: 'short', day: 'numeric' });
+  const groupedDaily = groupDailyPoints(vendorDaily, chartGrouping);
+  const maxVal = Math.max(...groupedDaily.map(d => d.profile_view + d.qr_scan + d.link_click), 1);
+  const displayDaily = chartGrouping === 'daily' ? groupedDaily.slice(-chartRange) : groupedDaily;
+  const formatDate = (str: string) => {
+    if (str.startsWith('Wk of') || isNaN(Date.parse(str))) {
+      return str;
+    }
+    return new Date(str).toLocaleDateString('en', { month: 'short', day: 'numeric' });
+  };
 
   const rankClass = (i: number) => {
     if (i === 0) return 'dash-rank-1';
@@ -402,7 +447,7 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
             {/* Chart for selected vendor */}
             <div className="dash-chart-card">
               <div className="dash-chart-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                   <span className="dash-chart-title">Activity Chart</span>
                   <select
                     value={selectedVendor ?? ''}
@@ -414,20 +459,32 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
                     ))}
                   </select>
                 </div>
-                <div className="dash-chart-tabs">
-                  {([7, 30] as const).map(n => (
-                    <button key={n} className={`dash-chart-tab ${chartRange === n ? 'active' : ''}`} onClick={() => setChartRange(n)}>
-                      {n === 7 ? '7 Days' : '30 Days'}
-                    </button>
-                  ))}
+                
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <div className="dash-chart-tabs" style={{ margin: 0 }}>
+                    {(['daily', 'weekly', 'monthly'] as const).map(g => (
+                      <button key={g} className={`dash-chart-tab ${chartGrouping === g ? 'active' : ''}`} onClick={() => setChartGrouping(g)}>
+                        {g.charAt(0).toUpperCase() + g.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                  {chartGrouping === 'daily' && (
+                    <div className="dash-chart-tabs" style={{ margin: 0 }}>
+                      {([7, 30] as const).map(n => (
+                        <button key={n} className={`dash-chart-tab ${chartRange === n ? 'active' : ''}`} onClick={() => setChartRange(n)}>
+                          {n === 7 ? '7 Days' : '30 Days'}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="dash-chart-area">
                 <div className="dash-chart-grid">
                   {[0,1,2,3,4].map(i => <div key={i} className="dash-chart-grid-line" />)}
                 </div>
-                {slicedDaily.map((pt, i) => (
-                  <div key={i} className="dash-bar-group">
+                {displayDaily.map((pt, i) => (
+                  <div key={i} className="dash-bar-group" title={formatDate(pt.date)}>
                     <div className="dash-bar" style={{ height: `${(pt.profile_view / maxVal) * 100}%`, background: '#6366f1' }} />
                     <div className="dash-bar" style={{ height: `${(pt.qr_scan / maxVal) * 100}%`, background: '#10b981' }} />
                     <div className="dash-bar" style={{ height: `${(pt.link_click / maxVal) * 100}%`, background: '#f59e0b' }} />
@@ -435,11 +492,18 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
                 ))}
               </div>
               <div className="dash-chart-labels">
-                {slicedDaily.map((pt, i) => (
-                  <div key={i} className="dash-chart-label">
-                    {i % (chartRange === 7 ? 1 : 5) === 0 ? formatDate(pt.date) : ''}
-                  </div>
-                ))}
+                {displayDaily.map((pt, i) => {
+                  const showLabel = chartGrouping === 'daily'
+                    ? (i % (chartRange === 7 ? 1 : 5) === 0)
+                    : chartGrouping === 'weekly'
+                      ? (i % 2 === 0)
+                      : true;
+                  return (
+                    <div key={i} className="dash-chart-label">
+                      {showLabel ? formatDate(pt.date) : ''}
+                    </div>
+                  );
+                })}
               </div>
               <div className="dash-legend">
                 {[['#6366f1','Profile Views'],['#10b981','QR Scans'],['#f59e0b','Link Clicks']].map(([c, l]) => (
@@ -451,78 +515,118 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
               </div>
             </div>
 
-            {/* Vendor Performance Table */}
-            <div className="dash-vendor-table">
-              <div className="dash-vendor-table-header">
-                <div className="dash-card-title" style={{ margin: 0 }}>
-                  <Icons.Users size={16} color="#6366f1" />
-                  Vendor Performance
+            {/* Vendor Performance and Live Activity Grid */}
+            <div className="dash-grid-2">
+              {/* Vendor Performance Table */}
+              <div className="dash-vendor-table" style={{ marginBottom: 0 }}>
+                <div className="dash-vendor-table-header">
+                  <div className="dash-card-title" style={{ margin: 0 }}>
+                    <Icons.Users size={16} color="#6366f1" />
+                    Vendor Performance
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', color: '#64748b' }}>
+                    Sort by:
+                    <select
+                      value={sortBy as string}
+                      onChange={e => setSortBy(e.target.value as keyof AnalyticsSummary)}
+                      style={{ background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '8px', fontSize: '0.82rem', cursor: 'pointer', outline: 'none' }}
+                    >
+                      <option value="profile_views">Views</option>
+                      <option value="total_clicks">Clicks</option>
+                      <option value="qr_scans">QR Scans</option>
+                      <option value="vcf_downloads">Contact Saves</option>
+                      <option value="phone_clicks">Phone Clicks</option>
+                    </select>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', color: '#64748b' }}>
-                  Sort by:
-                  <select
-                    value={sortBy as string}
-                    onChange={e => setSortBy(e.target.value as keyof AnalyticsSummary)}
-                    style={{ background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '8px', fontSize: '0.82rem', cursor: 'pointer', outline: 'none' }}
-                  >
-                    <option value="profile_views">Views</option>
-                    <option value="total_clicks">Clicks</option>
-                    <option value="qr_scans">QR Scans</option>
-                    <option value="vcf_downloads">Contact Saves</option>
-                    <option value="phone_clicks">Phone Clicks</option>
-                  </select>
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="dash-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Vendor</th>
+                        <th>Views</th>
+                        <th>QR Scans</th>
+                        <th>Clicks</th>
+                        <th>Contact Saves</th>
+                        <th>Phone Clicks</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedVendors.map((v, i) => {
+                        const s = summaries[v.username];
+                        return (
+                          <tr key={v.username}>
+                            <td><span className={`dash-rank-badge ${rankClass(i)}`}>{i + 1}</span></td>
+                            <td>
+                              <div className="dash-vendor-name">
+                                <img
+                                  src={v.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=60&q=80'}
+                                  alt=""
+                                  className="dash-vendor-avatar"
+                                />
+                                <div>
+                                  <div>{v.name}</div>
+                                  <div style={{ fontSize: '0.75rem', color: '#475569' }}>@{v.username}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ color: '#818cf8', fontWeight: 600 }}>{s?.profile_views ?? 0}</td>
+                            <td style={{ color: '#34d399', fontWeight: 600 }}>{s?.qr_scans ?? 0}</td>
+                            <td style={{ color: '#fbbf24', fontWeight: 600 }}>{s?.total_clicks ?? 0}</td>
+                            <td style={{ color: '#22d3ee', fontWeight: 600 }}>{s?.vcf_downloads ?? 0}</td>
+                            <td style={{ color: '#c084fc', fontWeight: 600 }}>{s?.phone_clicks ?? 0}</td>
+                            <td>
+                              <a href={`#/${v.username}`} target="_blank" rel="noreferrer"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '0.3rem 0.7rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#94a3b8', fontSize: '0.78rem', textDecoration: 'none', transition: 'all 0.2s' }}>
+                                <Icons.ExternalLink size={12} />
+                                View
+                              </a>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-              <div style={{ overflowX: 'auto' }}>
-                <table className="dash-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Vendor</th>
-                      <th>Views</th>
-                      <th>QR Scans</th>
-                      <th>Clicks</th>
-                      <th>Contact Saves</th>
-                      <th>Phone Clicks</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedVendors.map((v, i) => {
-                      const s = summaries[v.username];
+
+              {/* Team Live Activity Feed */}
+              <div className="dash-card" style={{ display: 'flex', flexDirection: 'column' }}>
+                <div className="dash-card-title">
+                  <Icons.Activity size={16} color="#7660F1" />
+                  Team Live Activity Feed
+                </div>
+                {recentEvents.length === 0 ? (
+                  <p style={{ color: '#475569', fontSize: '0.9rem' }}>No activity recorded yet for this period. Share profiles to start tracking!</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto', maxHeight: '450px', paddingRight: '4px' }}>
+                    {recentEvents.map((ev) => {
+                      const meta = EVENT_META[ev.event_type] ?? { label: ev.event_type, icon: 'Activity', color: '#64748b' };
+                      const label = ev.event_type === 'link_click' && ev.link_type
+                        ? `${ev.link_type} clicked`
+                        : meta.label;
+                      
+                      // Find vendor details
+                      const eventVendor = companyVendors.find(v => v.username.toLowerCase() === ev.vendor_username.toLowerCase());
+                      const displayName = eventVendor ? eventVendor.name : `@${ev.vendor_username}`;
+
                       return (
-                        <tr key={v.username}>
-                          <td><span className={`dash-rank-badge ${rankClass(i)}`}>{i + 1}</span></td>
-                          <td>
-                            <div className="dash-vendor-name">
-                              <img
-                                src={v.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=60&q=80'}
-                                alt=""
-                                className="dash-vendor-avatar"
-                              />
-                              <div>
-                                <div>{v.name}</div>
-                                <div style={{ fontSize: '0.75rem', color: '#475569' }}>@{v.username}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td style={{ color: '#818cf8', fontWeight: 600 }}>{s?.profile_views ?? 0}</td>
-                          <td style={{ color: '#34d399', fontWeight: 600 }}>{s?.qr_scans ?? 0}</td>
-                          <td style={{ color: '#fbbf24', fontWeight: 600 }}>{s?.total_clicks ?? 0}</td>
-                          <td style={{ color: '#22d3ee', fontWeight: 600 }}>{s?.vcf_downloads ?? 0}</td>
-                          <td style={{ color: '#c084fc', fontWeight: 600 }}>{s?.phone_clicks ?? 0}</td>
-                          <td>
-                            <a href={`#/${v.username}`} target="_blank" rel="noreferrer"
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '0.3rem 0.7rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#94a3b8', fontSize: '0.78rem', textDecoration: 'none', transition: 'all 0.2s' }}>
-                              <Icons.ExternalLink size={12} />
-                              View
-                            </a>
-                          </td>
-                        </tr>
+                        <div key={ev.id} className="dash-activity-item" style={{ alignItems: 'center', gap: '0.75rem', padding: '6px 0', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
+                          <div style={{ width: 30, height: 30, borderRadius: '8px', background: `${meta.color}15`, color: meta.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <DynIcon name={meta.icon} size={14} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '0.82rem', color: '#1F2937', fontWeight: 600 }}>{label}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>by <span style={{ fontWeight: 500 }}>{displayName}</span></div>
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: '#94a3b8', flexShrink: 0 }}>{timeAgo(ev.created_at)}</div>
+                        </div>
                       );
                     })}
-                  </tbody>
-                </table>
+                  </div>
+                )}
               </div>
             </div>
           </>

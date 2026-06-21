@@ -50,9 +50,9 @@ const SERVICES = [
 ];
 
 const STATS = [
-  { value: '15+', label: 'Years of Experience' },
-  { value: '500+', label: 'Active Clients' },
-  { value: '50K+', label: 'Profile Views' },
+  { value: '15+', label: 'Years Experience' },
+  { value: '500+', label: 'NFC Cards Sold' },
+  { value: '50K+', label: 'Monthly Scans' },
   { value: '99%', label: 'Client Satisfaction' },
 ];
 
@@ -100,6 +100,75 @@ const DynIcon = ({ name, size = 24, color }: { name: string; size?: number; colo
   const C = (Icons as any)[name];
   if (!C) return null;
   return <C size={size} color={color} />;
+};
+
+const StatCountUp: React.FC<{ value: string; label: string }> = ({ value, label }) => {
+  const [displayVal, setDisplayVal] = useState('0');
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let targetNumber = 0;
+    let suffix = '';
+
+    if (value.endsWith('K+')) {
+      targetNumber = parseFloat(value.replace('K+', ''));
+      suffix = 'K+';
+    } else if (value.endsWith('+')) {
+      targetNumber = parseFloat(value.replace('+', ''));
+      suffix = '+';
+    } else if (value.endsWith('%')) {
+      targetNumber = parseFloat(value.replace('%', ''));
+      suffix = '%';
+    } else {
+      targetNumber = parseFloat(value);
+    }
+
+    let hasAnimated = false;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && !hasAnimated) {
+          hasAnimated = true;
+          const end = targetNumber;
+          const duration = 2000; // 2 seconds
+          const startTime = performance.now();
+
+          const animate = (now: number) => {
+            const progress = Math.min((now - startTime) / duration, 1);
+            const easeProgress = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+            const currentVal = Math.floor(easeProgress * end);
+            
+            setDisplayVal(`${currentVal}${suffix}`);
+
+            if (progress < 1) {
+              requestAnimationFrame(animate);
+            } else {
+              setDisplayVal(value);
+            }
+          };
+
+          requestAnimationFrame(animate);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [value]);
+
+  return (
+    <div ref={ref} className="lp-stat-item">
+      <span className="lp-stat-value">{displayVal}</span>
+      <span className="lp-stat-label">{label}</span>
+    </div>
+  );
 };
 
 export const LandingPage: React.FC = () => {
@@ -192,7 +261,7 @@ export const LandingPage: React.FC = () => {
           <a href="#/" className="lp-nav-logo">
             <img src="/logo.png" alt="DevTech Logo" className="lp-nav-logo-img" />
             <span>DevTech</span>
-            <span className="lp-nav-logo-tag">NFC</span>
+
           </a>
 
           <div className={`lp-nav-links ${menuOpen ? 'open' : ''}`}>
@@ -201,7 +270,7 @@ export const LandingPage: React.FC = () => {
             <button onClick={() => scrollTo('stats')}>Results</button>
             <button onClick={() => scrollTo('clients')}>Clients</button>
             <button onClick={() => scrollTo('contact')}>Contact</button>
-            
+
             <div className="lp-mobile-nfc-links">
               <div className="lp-mobile-nfc-header">NFC Card Options</div>
               <a href="#/login" onClick={() => setMenuOpen(false)}>Individual Login</a>
@@ -321,13 +390,62 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* ─── Card Showcase ──────────────────────────────────────── */}
+      <section className="lp-card-showcase">
+        <div className="lp-card-showcase-inner">
+          <div className="lp-card-showcase-text">
+            <div className="lp-section-badge">Premium NFC Technology</div>
+            <h2 className="lp-section-title">One Card, Infinite Connections</h2>
+            <p className="lp-card-showcase-desc">
+              Elevate your networking game with our state-of-the-art DevTech NFC business cards. 
+              Share your contact details, social profiles, documents, and website instantly with a single tap. 
+              No app required.
+            </p>
+            <div className="lp-card-features">
+              <div className="lp-card-feature-item">
+                <Icons.Zap size={18} color="#06B6D4" />
+                <span>Instant Sharing via Tap or QR Code</span>
+              </div>
+              <div className="lp-card-feature-item">
+                <Icons.RefreshCw size={18} color="#7660F1" />
+                <span>Update Details Anytime in Real-time</span>
+              </div>
+              <div className="lp-card-feature-item">
+                <Icons.Eye size={18} color="#10B981" />
+                <span>Track Live Analytics &amp; Clicks</span>
+              </div>
+            </div>
+            <div style={{ marginTop: '2rem' }}>
+              <button 
+                type="button" 
+                onClick={() => setIsLeadModalOpen(true)}
+                className="lp-btn-primary" 
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', border: 'none', cursor: 'pointer' }}
+              >
+                <Icons.ShoppingCart size={18} />
+                Order Your Card Now
+              </button>
+            </div>
+          </div>
+          <div className="lp-card-showcase-visual">
+            <div className="lp-card-container">
+              <div className="lp-card-wrapper lp-card-white-wrapper lp-card-float-1">
+                <img src="/devtech-card.png" alt="DevTech White Card" className="lp-card-img" />
+                <div className="lp-card-shadow" />
+              </div>
+              <div className="lp-card-wrapper lp-card-blue-wrapper lp-card-float-2">
+                <img src="/devtech-card-blue.png" alt="DevTech Blue Card" className="lp-card-img" />
+                <div className="lp-card-shadow" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ─── Stats Strip ────────────────────────────────────────── */}
       <section className="lp-stats-strip" id="stats">
         {STATS.map((s, i) => (
-          <div key={i} className="lp-stat-item">
-            <span className="lp-stat-value">{s.value}</span>
-            <span className="lp-stat-label">{s.label}</span>
-          </div>
+          <StatCountUp key={i} value={s.value} label={s.label} />
         ))}
       </section>
 
@@ -371,10 +489,10 @@ export const LandingPage: React.FC = () => {
                 </div>
               ))}
             </div>
-            <button 
+            <button
               type="button"
               onClick={() => setIsLeadModalOpen(true)}
-              className="lp-btn-primary" 
+              className="lp-btn-primary"
               style={{ marginTop: '2rem', display: 'inline-flex', alignItems: 'center', gap: '8px', border: 'none', cursor: 'pointer' }}
             >
               Get Started
@@ -697,8 +815,8 @@ export const LandingPage: React.FC = () => {
 
                 <div className="input-group" style={{ margin: 0 }}>
                   <label className="input-label" style={{ fontSize: '0.8rem', color: '#4B5563', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Your Name *</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="Enter your full name"
                     value={leadForm.name}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, name: e.target.value }))}
@@ -711,8 +829,8 @@ export const LandingPage: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div className="input-group" style={{ margin: 0 }}>
                     <label className="input-label" style={{ fontSize: '0.8rem', color: '#4B5563', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Phone Number *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="+201..."
                       value={leadForm.phone}
                       onChange={(e) => setLeadForm(prev => ({ ...prev, phone: e.target.value }))}
@@ -723,8 +841,8 @@ export const LandingPage: React.FC = () => {
                   </div>
                   <div className="input-group" style={{ margin: 0 }}>
                     <label className="input-label" style={{ fontSize: '0.8rem', color: '#4B5563', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Email Address *</label>
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       placeholder="name@example.com"
                       value={leadForm.email}
                       onChange={(e) => setLeadForm(prev => ({ ...prev, email: e.target.value }))}
@@ -737,8 +855,8 @@ export const LandingPage: React.FC = () => {
 
                 <div className="input-group" style={{ margin: 0 }}>
                   <label className="input-label" style={{ fontSize: '0.8rem', color: '#4B5563', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Company Name (Optional)</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="Enter company name"
                     value={leadForm.company}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, company: e.target.value }))}
@@ -749,7 +867,7 @@ export const LandingPage: React.FC = () => {
 
                 <div className="input-group" style={{ margin: 0 }}>
                   <label className="input-label" style={{ fontSize: '0.8rem', color: '#4B5563', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Message / Requirements (Optional)</label>
-                  <textarea 
+                  <textarea
                     placeholder="Tell us what you need..."
                     value={leadForm.message}
                     onChange={(e) => setLeadForm(prev => ({ ...prev, message: e.target.value }))}
@@ -759,9 +877,9 @@ export const LandingPage: React.FC = () => {
                   />
                 </div>
 
-                <button 
-                  type="submit" 
-                  className="lp-btn-primary" 
+                <button
+                  type="submit"
+                  className="lp-btn-primary"
                   disabled={leadSubmitting}
                   style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem', padding: '0.85rem' }}
                 >

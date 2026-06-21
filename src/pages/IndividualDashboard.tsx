@@ -5,8 +5,11 @@ import { supabase } from '../lib/supabase';
 import {
   fetchAnalyticsSummary,
   fetchDailyAnalytics,
+  fetchRecentEvents,
+  groupDailyPoints,
   type AnalyticsSummary,
   type DailyPoint,
+  type RecentEvent,
 } from '../lib/analytics';
 import { QRCodeCanvas } from 'qrcode.react';
 import '../styles/landing.css';
@@ -31,6 +34,31 @@ const BAR_COLORS: Record<string, string> = {
   link_click: '#2563EB',
 };
 
+const EVENT_META: Record<string, { label: string; icon: string; color: string }> = {
+  profile_view: { label: 'Profile viewed', icon: 'Eye', color: '#7660F1' },
+  qr_scan: { label: 'QR Code scanned', icon: 'QrCode', color: '#06B6D4' },
+  link_click: { label: 'Link clicked', icon: 'MousePointer', color: '#2563EB' },
+  pdf_download: { label: 'PDF downloaded', icon: 'FileText', color: '#ec4899' },
+  vcf_download: { label: 'Contact saved', icon: 'UserPlus', color: '#10b981' },
+  phone_click: { label: 'Phone clicked', icon: 'Phone', color: '#a855f7' },
+};
+
+function timeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  if (seconds < 5) return 'Just now';
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Yesterday';
+  return `${days}d ago`;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const DynIcon = ({ name, size = 20 }: { name: string; size?: number }) => {
   const C = (Icons as any)[name];
@@ -45,9 +73,11 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
   const [lifetimeSummary, setLifetimeSummary] = useState<AnalyticsSummary | null>(null);
   const [currentSummary, setCurrentSummary] = useState<AnalyticsSummary | null>(null);
   const [daily, setDaily] = useState<DailyPoint[]>([]);
+  const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([]);
   const [chartRange, setChartRange] = useState<7 | 30>(7);
   const [statView, setStatView] = useState<'current' | 'lifetime'>('current');
   const [loading, setLoading] = useState(true);
+  const [chartGrouping, setChartGrouping] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
   // Subscription & Reset States
   const [subExpiry, setSubExpiry] = useState<string | null>(null);
@@ -157,7 +187,7 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
     return () => { isMounted = false; };
   }, [session]);
 
-  // 2. Fetch summaries and daily chart when resetTimestamp, statView, or chartRange changes
+  // 2. Fetch summaries, daily chart, and recent events when resetTimestamp/statView/chartRange/chartGrouping changes
   useEffect(() => {
     if (!session || resetTimestamp === undefined) return;
 
@@ -168,16 +198,25 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
         const sinceFilter = resetTimestamp || undefined;
         const chartSince = (statView === 'current' && resetTimestamp) ? resetTimestamp : undefined;
 
-        const [sumLifetime, sumCurrent, day] = await Promise.all([
+        // Fetch a longer range if grouping by week/month to get a meaningful trend
+        const queryDays = chartGrouping === 'daily'
+          ? chartRange
+          : chartGrouping === 'weekly'
+            ? 84 // 12 weeks
+            : 180; // 6 months
+
+        const [sumLifetime, sumCurrent, day, events] = await Promise.all([
           fetchAnalyticsSummary(vendorUsername),
           fetchAnalyticsSummary(vendorUsername, sinceFilter),
-          fetchDailyAnalytics(vendorUsername, chartRange, chartSince),
+          fetchDailyAnalytics(vendorUsername, queryDays, chartSince),
+          fetchRecentEvents(vendorUsername, 12, sinceFilter),
         ]);
 
         if (isMounted) {
           setLifetimeSummary(sumLifetime);
           setCurrentSummary(sumCurrent);
           setDaily(day);
+          setRecentEvents(events);
         }
       } catch (err) {
         console.error('Failed to load analytics:', err);
@@ -188,7 +227,7 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
 
     fetchAnalytics();
     return () => { isMounted = false; };
-  }, [session, vendorUsername, resetTimestamp, statView, chartRange]);
+  }, [session, vendorUsername, resetTimestamp, statView, chartRange, chartGrouping]);
 
   useEffect(() => {
     const raw = sessionStorage.getItem('devtech_individual_session');
@@ -231,24 +270,20 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
 
   // Compute active stats
   const activeSummary = statView === 'current' ? currentSummary : lifetimeSummary;
-  const maxVal = Math.max(...daily.map(d => d.profile_view + d.qr_scan + d.link_click), 1);
-  const slicedDaily = daily.slice(-chartRange);
+  const groupedDaily = groupDailyPoints(daily, chartGrouping);
+  const maxVal = Math.max(...groupedDaily.map(d => d.profile_view + d.qr_scan + d.link_click), 1);
+  const displayDaily = chartGrouping === 'daily' ? groupedDaily.slice(-chartRange) : groupedDaily;
 
   const formatDate = (str: string) => {
+    if (str.startsWith('Wk of') || isNaN(Date.parse(str))) {
+      return str;
+    }
     const d = new Date(str);
     return d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
   };
 
   const isExpired = subDaysLeft !== null && subDaysLeft < 0;
   const isWarning = subDaysLeft !== null && subDaysLeft >= 0 && subDaysLeft <= 7;
-
-  const recentActivity = [
-    ...(activeSummary && activeSummary.profile_views > 0 ? [{ type: 'view', text: `${activeSummary.profile_views} profile views`, color: '#7660F1' }] : []),
-    ...(activeSummary && activeSummary.qr_scans > 0 ? [{ type: 'qr', text: `${activeSummary.qr_scans} QR scans`, color: '#06B6D4' }] : []),
-    ...(activeSummary && activeSummary.total_clicks > 0 ? [{ type: 'click', text: `${activeSummary.total_clicks} link clicks`, color: '#2563EB' }] : []),
-    ...(activeSummary && activeSummary.vcf_downloads > 0 ? [{ type: 'vcf', text: `${activeSummary.vcf_downloads} contacts saved`, color: '#10b981' }] : []),
-    ...(activeSummary && activeSummary.phone_clicks > 0 ? [{ type: 'phone', text: `${activeSummary.phone_clicks} phone clicks`, color: '#a855f7' }] : []),
-  ];
 
   return (
     <div className="dash-root">
@@ -419,12 +454,23 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
             <div className="dash-chart-card">
               <div className="dash-chart-header">
                 <span className="dash-chart-title">Activity Over Time</span>
-                <div className="dash-chart-tabs">
-                  {([7, 30] as const).map(n => (
-                    <button key={n} className={`dash-chart-tab ${chartRange === n ? 'active' : ''}`} onClick={() => setChartRange(n)}>
-                      {n === 7 ? '7 Days' : '30 Days'}
-                    </button>
-                  ))}
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <div className="dash-chart-tabs" style={{ margin: 0 }}>
+                    {(['daily', 'weekly', 'monthly'] as const).map(g => (
+                      <button key={g} className={`dash-chart-tab ${chartGrouping === g ? 'active' : ''}`} onClick={() => setChartGrouping(g)}>
+                        {g.charAt(0).toUpperCase() + g.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                  {chartGrouping === 'daily' && (
+                    <div className="dash-chart-tabs" style={{ margin: 0 }}>
+                      {([7, 30] as const).map(n => (
+                        <button key={n} className={`dash-chart-tab ${chartRange === n ? 'active' : ''}`} onClick={() => setChartRange(n)}>
+                          {n === 7 ? '7 Days' : '30 Days'}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -432,7 +478,7 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
                 <div className="dash-chart-grid">
                   {[0, 1, 2, 3, 4].map(i => <div key={i} className="dash-chart-grid-line" />)}
                 </div>
-                {slicedDaily.map((pt, i) => (
+                {displayDaily.map((pt, i) => (
                   <div key={i} className="dash-bar-group" title={formatDate(pt.date)}>
                     <div className="dash-bar" style={{ height: `${(pt.profile_view / maxVal) * 100}%`, background: '#7660F1' }} />
                     <div className="dash-bar" style={{ height: `${(pt.qr_scan / maxVal) * 100}%`, background: '#06B6D4' }} />
@@ -442,11 +488,18 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
               </div>
 
               <div className="dash-chart-labels">
-                {slicedDaily.map((pt, i) => (
-                  <div key={i} className="dash-chart-label">
-                    {i % (chartRange === 7 ? 1 : 5) === 0 ? formatDate(pt.date) : ''}
-                  </div>
-                ))}
+                {displayDaily.map((pt, i) => {
+                  const showLabel = chartGrouping === 'daily'
+                    ? (i % (chartRange === 7 ? 1 : 5) === 0)
+                    : chartGrouping === 'weekly'
+                      ? (i % 2 === 0)
+                      : true;
+                  return (
+                    <div key={i} className="dash-chart-label">
+                      {showLabel ? formatDate(pt.date) : ''}
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="dash-legend">
@@ -465,17 +518,30 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
               <div className="dash-card">
                 <div className="dash-card-title">
                   <Icons.Activity size={16} color="#7660F1" />
-                  Activity Summary
+                  Live Activity Feed
                 </div>
-                {recentActivity.length === 0 ? (
+                {recentEvents.length === 0 ? (
                   <p style={{ color: '#475569', fontSize: '0.9rem' }}>No activity recorded yet for this period. Share your profile to start tracking!</p>
                 ) : (
-                  recentActivity.map((item, i) => (
-                    <div key={i} className="dash-activity-item">
-                      <div className="dash-activity-dot" style={{ background: item.color }} />
-                      <span className="dash-activity-text">{item.text}</span>
-                    </div>
-                  ))
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {recentEvents.map((ev) => {
+                      const meta = EVENT_META[ev.event_type] ?? { label: ev.event_type, icon: 'Activity', color: '#64748b' };
+                      const label = ev.event_type === 'link_click' && ev.link_type
+                        ? `${ev.link_type} clicked`
+                        : meta.label;
+                      return (
+                        <div key={ev.id} className="dash-activity-item" style={{ alignItems: 'center', gap: '0.75rem' }}>
+                          <div style={{ width: 30, height: 30, borderRadius: '8px', background: `${meta.color}15`, color: meta.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <DynIcon name={meta.icon} size={14} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '0.85rem', color: '#1F2937', fontWeight: 600 }}>{label}</div>
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: '#94a3b8', flexShrink: 0 }}>{timeAgo(ev.created_at)}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
 

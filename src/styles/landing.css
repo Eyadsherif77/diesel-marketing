@@ -380,6 +380,7 @@
 .lp-gradient-text {
   background: linear-gradient(135deg, #1877F2 0%, #00B4D8 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -675,6 +676,7 @@
   font-weight: 900;
   background: linear-gradient(135deg, #1877F2, #00B4D8);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   line-height: 1;
   margin-bottom: 0.5rem;
@@ -1158,6 +1160,7 @@
   font-weight: 800;
   background: #1877F2;
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 .dash-topbar-actions { display: flex; align-items: center; gap: 0.75rem; }
@@ -1610,3 +1613,161 @@
     color: #5b45d6;
   }
 }
+
+/* ──────────────────────────────────────────────────────────
+   Card Showcase Section
+   ────────────────────────────────────────────────────────── */
+.lp-card-showcase {
+  padding: 5rem 2rem;
+  background: #f8fafc;
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+.lp-card-showcase-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+.lp-card-showcase-text {
+  max-width: 540px;
+}
+.lp-card-showcase-desc {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #4b5563;
+  margin: 1.5rem 0 2rem 0;
+}
+.lp-card-features {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.lp-card-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+  color: #1f2937;
+  font-weight: 600;
+}
+.lp-card-showcase-visual {
+  position: relative;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lp-card-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.lp-card-wrapper {
+  position: absolute;
+  width: 320px;
+  border-radius: 16px;
+  transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+  cursor: pointer;
+}
+.lp-card-white-wrapper {
+  left: 5%;
+  top: 5%;
+  z-index: 2;
+}
+.lp-card-blue-wrapper {
+  right: 5%;
+  bottom: 5%;
+  z-index: 1;
+}
+.lp-card-img {
+  width: 100%;
+  border-radius: 16px;
+  display: block;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.lp-card-shadow {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  bottom: -12px;
+  background: rgba(0, 0, 0, 0.12);
+  filter: blur(16px);
+  border-radius: 16px;
+  z-index: -1;
+  transition: all 0.5s ease;
+}
+
+/* Floating Animations */
+@keyframes lpCardFloat1 {
+  0% { transform: translateY(0px) rotate(-3deg); }
+  50% { transform: translateY(-10px) rotate(-1deg); }
+  100% { transform: translateY(0px) rotate(-3deg); }
+}
+@keyframes lpCardFloat2 {
+  0% { transform: translateY(0px) rotate(4deg); }
+  50% { transform: translateY(-10px) rotate(6deg); }
+  100% { transform: translateY(0px) rotate(4deg); }
+}
+.lp-card-float-1 {
+  animation: lpCardFloat1 6s ease-in-out infinite;
+}
+.lp-card-float-2 {
+  animation: lpCardFloat2 6s ease-in-out infinite 3s;
+}
+
+/* Hover Lift Effect */
+.lp-card-wrapper:hover {
+  z-index: 10;
+  animation-play-state: paused;
+}
+.lp-card-wrapper:hover .lp-card-img {
+  transform: translateY(-16px) rotate(0deg) scale(1.04);
+}
+.lp-card-wrapper:hover .lp-card-shadow {
+  transform: translateY(10px) scale(0.95);
+  background: rgba(118, 96, 241, 0.25);
+  filter: blur(24px);
+}
+
+@media (max-width: 991px) {
+  .lp-card-showcase-inner {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+    text-align: center;
+  }
+  .lp-card-showcase-text {
+    max-width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .lp-card-features {
+    align-items: center;
+    width: 100%;
+  }
+  .lp-card-showcase-visual {
+    height: 350px;
+    max-width: 450px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .lp-card-wrapper {
+    width: 250px;
+  }
+  .lp-card-white-wrapper {
+    left: 2%;
+  }
+  .lp-card-blue-wrapper {
+    right: 2%;
+  }
+}
+
