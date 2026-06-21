@@ -34,7 +34,9 @@ async function testJoin() {
 async function run() {
   await check('vendors');
   await check('companies');
+  await check('individual_accounts');
   await testJoin();
 }
 
 run();
+

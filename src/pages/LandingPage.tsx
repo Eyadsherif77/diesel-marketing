@@ -446,10 +446,10 @@ export const LandingPage: React.FC = () => {
         <div className="lp-analytics-cta-inner">
           <div className="lp-analytics-cta-text">
             <div className="lp-section-badge" style={{ marginBottom: '1rem' }}>NFC Analytics Portal</div>
-            <h2 className="lp-section-title" style={{ color: '#fff', marginBottom: '1rem' }}>
+            <h2 className="lp-section-title" style={{ color: '#1F2937', marginBottom: '1rem' }}>
               See How Your Profile Performs
             </h2>
-            <p style={{ color: '#94a3b8', lineHeight: 1.7, marginBottom: '2rem', fontSize: '1rem' }}>
+            <p style={{ color: '#4B5563', lineHeight: 1.7, marginBottom: '2rem', fontSize: '1rem' }}>
               Access your personal or company CRM analytics dashboard. Track profile views, QR scans,
               link clicks, contact saves, and phone calls — all in one place, updated in real time.
             </p>
@@ -531,7 +531,7 @@ export const LandingPage: React.FC = () => {
             <div className="lp-contact-info">
               <div className="lp-section-badge">Contact Us</div>
               <h2 className="lp-section-title">Let's Build Something Together</h2>
-              <p style={{ color: '#94a3b8', lineHeight: 1.7, marginBottom: '2rem' }}>
+              <p style={{ color: '#4B5563', lineHeight: 1.7, marginBottom: '2rem' }}>
                 Have questions about our services, pricing, or want to set up your team's NFC cards?
                 We'd love to hear from you. Expect a reply within 24 hours.
               </p>

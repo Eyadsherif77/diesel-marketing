@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import * as Icons from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
@@ -45,7 +45,7 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
   // Subscription & Reset States
   const [subExpiry, setSubExpiry] = useState<string | null>(null);
   const [subDaysLeft, setSubDaysLeft] = useState<number | null>(null);
-  const [resetTimestamp, setResetTimestamp] = useState<string | null>(null);
+  const [resetTimestamp, setResetTimestamp] = useState<string | undefined>(undefined);
   const [statView, setStatView] = useState<'current' | 'lifetime'>('current');
 
   const calculateDaysLeft = (expiry: string | null) => {
@@ -58,56 +58,86 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  const loadData = useCallback(async (companyId: string, currentStatView: 'current' | 'lifetime', currentChartRange: number) => {
-    setLoading(true);
-    try {
-      // Fetch latest subscription & reset info
-      const { data: compData } = await supabase
-        .from('companies')
-        .select('subscription_end_date, analytics_reset_at')
-        .eq('id', companyId)
-        .single();
-      
-      let subEnd = '';
-      let resetTs = '';
-      if (compData) {
-        subEnd = compData.subscription_end_date ?? '';
-        resetTs = compData.analytics_reset_at ?? '';
-        setSubExpiry(subEnd);
-        setSubDaysLeft(calculateDaysLeft(subEnd));
-        setResetTimestamp(resetTs);
+  // 1. Fetch subscription, reset timestamp, and company vendors on mount/session change
+  // NOTE: analytics_reset_at is read from vendors (not companies) because RLS blocks
+  // updates to the companies table from the anon key. We store it on all company vendors.
+  useEffect(() => {
+    if (!session || vendors.length === 0) return;
+    const companyId = session.companyId;
+
+    let isMounted = true;
+    async function fetchCompanyInfo() {
+      try {
+        // Read subscription from companies
+        const { data: compData } = await supabase
+          .from('companies')
+          .select('subscription_end_date')
+          .eq('id', companyId)
+          .single();
+
+        // Get company vendor usernames
+        const { data: vendorRows } = await supabase
+          .from('vendors')
+          .select('username, analytics_reset_at')
+          .eq('company_id', companyId);
+
+        const usernames = (vendorRows ?? []).map((r: { username: string }) => r.username);
+        const myVendors = vendors.filter(v => usernames.includes(v.username));
+
+        // Read analytics_reset_at from first company vendor (all vendors share same reset)
+        const resetTs = (vendorRows ?? [])[0]?.analytics_reset_at ?? '';
+
+        if (isMounted) {
+          const subEnd = compData?.subscription_end_date ?? '';
+          setSubExpiry(subEnd);
+          setSubDaysLeft(calculateDaysLeft(subEnd));
+          setResetTimestamp(resetTs);
+          setCompanyVendors(myVendors);
+        }
+      } catch (err) {
+        console.error('Failed to load company info:', err);
       }
-
-      // Get vendors that belong to this company
-      const { data: vendorRows } = await supabase
-        .from('vendors')
-        .select('username')
-        .eq('company_id', companyId);
-
-      const usernames = (vendorRows ?? []).map((r: { username: string }) => r.username);
-      const myVendors = vendors.filter(v => usernames.includes(v.username));
-      setCompanyVendors(myVendors);
-
-      if (myVendors.length > 0) {
-        // Always use current period filter for 'current' view (since reset), no filter for 'lifetime'
-        const sinceFilter = (currentStatView === 'current' && resetTs) ? resetTs : undefined;
-        const sums = await fetchMultiVendorSummary(myVendors.map(v => v.username), sinceFilter);
-        setSummaries(sums);
-
-        const currentSel = selectedVendor && myVendors.some(v => v.username === selectedVendor)
-          ? selectedVendor
-          : myVendors[0].username;
-
-        setSelectedVendor(currentSel);
-
-        const daily = await fetchDailyAnalytics(currentSel, currentChartRange, sinceFilter);
-        setVendorDaily(daily);
-      }
-    } catch (err) {
-      console.error('Failed to load company dashboard data:', err);
     }
-    setLoading(false);
-  }, [vendors, selectedVendor]);
+
+    fetchCompanyInfo();
+    return () => { isMounted = false; };
+  }, [session, vendors]);
+
+  // 2. Fetch summaries and selected vendor chart data when resetTimestamp, statView, chartRange, or selectedVendor changes
+  useEffect(() => {
+    if (!session || resetTimestamp === undefined || companyVendors.length === 0) return;
+
+    let isMounted = true;
+    async function fetchAnalytics() {
+      setLoading(true);
+      try {
+        const sinceFilter = (statView === 'current' && resetTimestamp) ? resetTimestamp : undefined;
+        
+        const sums = await fetchMultiVendorSummary(companyVendors.map(v => v.username), sinceFilter);
+        
+        const currentSel = selectedVendor && companyVendors.some(v => v.username === selectedVendor)
+          ? selectedVendor
+          : companyVendors[0].username;
+
+        const daily = await fetchDailyAnalytics(currentSel, chartRange, sinceFilter);
+
+        if (isMounted) {
+          setSummaries(sums);
+          if (currentSel !== selectedVendor) {
+            setSelectedVendor(currentSel);
+          }
+          setVendorDaily(daily);
+        }
+      } catch (err) {
+        console.error('Failed to load company analytics:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    fetchAnalytics();
+    return () => { isMounted = false; };
+  }, [session, companyVendors, resetTimestamp, statView, chartRange, selectedVendor]);
 
   useEffect(() => {
     const raw = sessionStorage.getItem('devtech_company_session');
@@ -120,39 +150,32 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
     setSession(s);
   }, [companyUsername]);
 
-  useEffect(() => {
-    if (session && vendors.length > 0) loadData(session.companyId, statView, chartRange);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, vendors.length, loadData]);
-
-  // Reload chart/summaries when statView or chartRange changes
-  useEffect(() => {
-    if (!session) return;
-    loadData(session.companyId, statView, chartRange);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statView, chartRange]);
-
-  const loadVendorChart = async (username: string) => {
+  const loadVendorChart = (username: string) => {
     setSelectedVendor(username);
-    const sinceFilter = (statView === 'current' && resetTimestamp) ? resetTimestamp : undefined;
-    const daily = await fetchDailyAnalytics(username, chartRange, sinceFilter);
-    setVendorDaily(daily);
   };
 
   const handleResetAnalytics = async () => {
     if (!session) return;
     if (confirm('Are you sure you want to reset your team analytics for the current period? This will filter the current period view to start from today. Historical lifetime analytics will NOT be deleted.')) {
       const now = new Date().toISOString();
-      const { error } = await supabase
-        .from('companies')
-        .update({ analytics_reset_at: now })
-        .eq('id', session.companyId);
-      
-      if (!error) {
+
+      // companies table is blocked by RLS for anon key, so we store the reset timestamp
+      // on all company vendors (vendors table is writable by anon key).
+      const vendorUsernames = companyVendors.map(v => v.username);
+      const updatePromises = vendorUsernames.map(username =>
+        supabase
+          .from('vendors')
+          .update({ analytics_reset_at: now })
+          .eq('username', username)
+      );
+      const results = await Promise.all(updatePromises);
+      const anyError = results.find(r => r.error);
+
+      if (!anyError) {
         setResetTimestamp(now);
         setStatView('current'); // Switch to current period view after reset
-        loadData(session.companyId, 'current', chartRange);
       } else {
+        console.error('Reset error:', anyError.error);
         alert('Failed to reset analytics. Please try again.');
       }
     }
@@ -217,7 +240,7 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
           <span>{session.companyName}</span>
         </div>
         <div className="dash-topbar-actions">
-          <div className="dash-topbar-user" style={{ borderColor: 'rgba(16,185,129,0.3)', color: '#34d399', background: 'rgba(16,185,129,0.1)' }}>
+          <div className="dash-topbar-user" style={{ borderColor: 'rgba(16,185,129,0.3)', color: '#10b981', background: 'rgba(16,185,129,0.05)' }}>
             <Icons.Building2 size={14} />
             @{session.username}
           </div>
@@ -247,15 +270,15 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
             background: 'rgba(239, 68, 68, 0.15)',
             border: '1px solid #ef4444',
             borderRadius: '12px',
-            color: '#fca5a5',
+            color: '#7f1d1d',
             marginBottom: '1.5rem',
             animation: 'fadeInUp 0.3s ease'
           }}>
             <Icons.AlertOctagon size={24} style={{ color: '#ef4444', flexShrink: 0 }} />
             <div>
-              <strong style={{ display: 'block', fontSize: '1rem', color: '#fff', fontWeight: 700 }}>Subscription Expired</strong>
+              <strong style={{ display: 'block', fontSize: '1rem', color: '#991b1b', fontWeight: 700 }}>Subscription Expired</strong>
               <span style={{ fontSize: '0.85rem' }}>
-                Your company profile access expired on <strong>{new Date(subExpiry!).toLocaleDateString()}</strong>. Some features may be restricted. Please contact support/admin to renew.
+                Your company profile access expired on <strong style={{ color: '#991b1b' }}>{new Date(subExpiry!).toLocaleDateString()}</strong>. Some features may be restricted. Please contact support/admin to renew.
               </span>
             </div>
           </div>
@@ -271,15 +294,15 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
             background: 'rgba(245, 158, 11, 0.15)',
             border: '1px solid #f59e0b',
             borderRadius: '12px',
-            color: '#fef08a',
+            color: '#78350f',
             marginBottom: '1.5rem',
             animation: 'fadeInUp 0.3s ease'
           }}>
             <Icons.BellRing size={24} style={{ color: '#f59e0b', flexShrink: 0 }} />
             <div>
-              <strong style={{ display: 'block', fontSize: '1rem', color: '#fff', fontWeight: 700 }}>Subscription Expiring Soon</strong>
+              <strong style={{ display: 'block', fontSize: '1rem', color: '#92400e', fontWeight: 700 }}>Subscription Expiring Soon</strong>
               <span style={{ fontSize: '0.85rem' }}>
-                Your company subscription has only <strong>{subDaysLeft} day{subDaysLeft !== 1 ? 's' : ''} left</strong> (expires on {new Date(subExpiry!).toLocaleDateString()}). Please renew shortly.
+                Your company subscription has only <strong style={{ color: '#92400e' }}>{subDaysLeft} day{subDaysLeft !== 1 ? 's' : ''} left</strong> (expires on {new Date(subExpiry!).toLocaleDateString()}). Please renew shortly.
               </span>
             </div>
           </div>
@@ -359,8 +382,8 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
                 />
                 <div>
                   <div style={{ fontSize: '0.75rem', color: '#fbbf24', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>⭐ Top Performer</div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#f1f5f9' }}>{topVendor.name}</div>
-                  <div style={{ fontSize: '0.82rem', color: '#94a3b8' }}>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1F2937' }}>{topVendor.name}</div>
+                  <div style={{ fontSize: '0.82rem', color: '#4B5563' }}>
                     @{topVendor.username} · {summaries[topVendor.username]?.profile_views ?? 0} views · {summaries[topVendor.username]?.total_clicks ?? 0} clicks
                   </div>
                 </div>
@@ -384,7 +407,7 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
                   <select
                     value={selectedVendor ?? ''}
                     onChange={e => loadVendorChart(e.target.value)}
-                    style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.1)', padding: '0.35rem 0.75rem', borderRadius: '8px', fontSize: '0.82rem', cursor: 'pointer' }}
+                    style={{ background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', padding: '0.35rem 0.75rem', borderRadius: '8px', fontSize: '0.82rem', cursor: 'pointer', outline: 'none' }}
                   >
                     {companyVendors.map(v => (
                       <option key={v.username} value={v.username}>{v.name}</option>
@@ -440,7 +463,7 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
                   <select
                     value={sortBy as string}
                     onChange={e => setSortBy(e.target.value as keyof AnalyticsSummary)}
-                    style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.1)', padding: '0.3rem 0.6rem', borderRadius: '8px', fontSize: '0.82rem', cursor: 'pointer' }}
+                    style={{ background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '8px', fontSize: '0.82rem', cursor: 'pointer', outline: 'none' }}
                   >
                     <option value="profile_views">Views</option>
                     <option value="total_clicks">Clicks</option>

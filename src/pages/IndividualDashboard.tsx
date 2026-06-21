@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import * as Icons from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
@@ -52,7 +52,7 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
   // Subscription & Reset States
   const [subExpiry, setSubExpiry] = useState<string | null>(null);
   const [subDaysLeft, setSubDaysLeft] = useState<number | null>(null);
-  const [resetTimestamp, setResetTimestamp] = useState<string | null>(null);
+  const [resetTimestamp, setResetTimestamp] = useState<string | undefined>(undefined);
 
   const vendor = vendors.find(v => v.username.toLowerCase() === vendorUsername.toLowerCase());
 
@@ -116,45 +116,79 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  // Load subscription info + BOTH summaries + chart data
-  const loadData = useCallback(async (userLoginName: string, currentStatView: 'current' | 'lifetime', currentChartRange: number) => {
-    setLoading(true);
-    try {
-      // Fetch latest subscription & reset info from individual_accounts
-      const { data: accData } = await supabase
-        .from('individual_accounts')
-        .select('subscription_end_date, analytics_reset_at')
-        .eq('username', userLoginName.toLowerCase())
-        .single();
-      
-      let subEnd = '';
-      let resetTs = '';
-      if (accData) {
-        subEnd = accData.subscription_end_date ?? '';
-        resetTs = accData.analytics_reset_at ?? '';
-        setSubExpiry(subEnd);
-        setSubDaysLeft(calculateDaysLeft(subEnd));
-        setResetTimestamp(resetTs);
+  // 1. Fetch account info on mount/session change
+  // NOTE: analytics_reset_at is read from vendors (not individual_accounts)
+  // because RLS blocks updates to individual_accounts from the anon key.
+  useEffect(() => {
+    if (!session) return;
+    const username = session.username;
+    const sessionVendorUsername = session.vendorUsername;
+    
+    let isMounted = true;
+    async function fetchAccountInfo() {
+      try {
+        // Read subscription from individual_accounts
+        const { data: accData } = await supabase
+          .from('individual_accounts')
+          .select('subscription_end_date')
+          .eq('username', username.toLowerCase())
+          .single();
+
+        // Read analytics_reset_at from vendors (RLS allows updates here)
+        const { data: vendorData } = await supabase
+          .from('vendors')
+          .select('analytics_reset_at')
+          .eq('username', sessionVendorUsername.toLowerCase())
+          .single();
+        
+        if (isMounted) {
+          const subEnd = accData?.subscription_end_date ?? '';
+          const resetTs = vendorData?.analytics_reset_at ?? '';
+          setSubExpiry(subEnd);
+          setSubDaysLeft(calculateDaysLeft(subEnd));
+          setResetTimestamp(resetTs);
+        }
+      } catch (err) {
+        console.error('Failed to fetch account info:', err);
       }
-
-      // Always fetch BOTH lifetime (no filter) AND current period (since resetTs)
-      const sinceFilter = resetTs || undefined; // undefined = no filter = all time
-      const chartSince = (currentStatView === 'current' && resetTs) ? resetTs : undefined;
-
-      const [sumLifetime, sumCurrent, day] = await Promise.all([
-        fetchAnalyticsSummary(vendorUsername),                    // lifetime: no since filter
-        fetchAnalyticsSummary(vendorUsername, sinceFilter),       // current: from reset date
-        fetchDailyAnalytics(vendorUsername, currentChartRange, chartSince),
-      ]);
-
-      setLifetimeSummary(sumLifetime);
-      setCurrentSummary(sumCurrent);
-      setDaily(day);
-    } catch (err) {
-      console.error('Failed to load dashboard statistics:', err);
     }
-    setLoading(false);
-  }, [vendorUsername]);
+    
+    fetchAccountInfo();
+    return () => { isMounted = false; };
+  }, [session]);
+
+  // 2. Fetch summaries and daily chart when resetTimestamp, statView, or chartRange changes
+  useEffect(() => {
+    if (!session || resetTimestamp === undefined) return;
+
+    let isMounted = true;
+    async function fetchAnalytics() {
+      setLoading(true);
+      try {
+        const sinceFilter = resetTimestamp || undefined;
+        const chartSince = (statView === 'current' && resetTimestamp) ? resetTimestamp : undefined;
+
+        const [sumLifetime, sumCurrent, day] = await Promise.all([
+          fetchAnalyticsSummary(vendorUsername),
+          fetchAnalyticsSummary(vendorUsername, sinceFilter),
+          fetchDailyAnalytics(vendorUsername, chartRange, chartSince),
+        ]);
+
+        if (isMounted) {
+          setLifetimeSummary(sumLifetime);
+          setCurrentSummary(sumCurrent);
+          setDaily(day);
+        }
+      } catch (err) {
+        console.error('Failed to load analytics:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    fetchAnalytics();
+    return () => { isMounted = false; };
+  }, [session, vendorUsername, resetTimestamp, statView, chartRange]);
 
   useEffect(() => {
     const raw = sessionStorage.getItem('devtech_individual_session');
@@ -167,21 +201,6 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
     setSession(s);
   }, [vendorUsername]);
 
-  useEffect(() => { 
-    if (session) {
-      loadData(session.username, statView, chartRange);
-    } 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, loadData]);
-
-  // Reload chart data when statView or chartRange changes (without refetching subscription)
-  useEffect(() => {
-    if (!session) return;
-    const chartSince = (statView === 'current' && resetTimestamp) ? resetTimestamp : undefined;
-    fetchDailyAnalytics(vendorUsername, chartRange, chartSince).then(setDaily);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statView, chartRange]);
-
   const handleLogout = () => {
     sessionStorage.removeItem('devtech_individual_session');
     window.location.hash = '#/login';
@@ -192,32 +211,17 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
     if (confirm('Are you sure you want to reset your current period analytics? This will filter your current view to start from today. Historical lifetime analytics will NOT be deleted.')) {
       const now = new Date().toISOString();
       
-      // Update both individual_accounts AND vendors table to ensure persistence across logout/login
-      const [{ error: accError }, { error: vendorError }] = await Promise.all([
-        supabase
-          .from('individual_accounts')
-          .update({ analytics_reset_at: now })
-          .eq('username', session.username.toLowerCase()),
-        supabase
-          .from('vendors')
-          .update({ analytics_reset_at: now })
-          .eq('username', vendorUsername.toLowerCase()),
-      ]);
+      // Only update vendors table — individual_accounts is blocked by RLS for anon key
+      const { error: vendorError } = await supabase
+        .from('vendors')
+        .update({ analytics_reset_at: now })
+        .eq('username', vendorUsername.toLowerCase());
       
-      if (!accError && !vendorError) {
+      if (!vendorError) {
         setResetTimestamp(now);
-        // Reload both summaries with the new reset timestamp
-        const [sumLifetime, sumCurrent, day] = await Promise.all([
-          fetchAnalyticsSummary(vendorUsername),
-          fetchAnalyticsSummary(vendorUsername, now),
-          fetchDailyAnalytics(vendorUsername, chartRange, statView === 'current' ? now : undefined),
-        ]);
-        setLifetimeSummary(sumLifetime);
-        setCurrentSummary(sumCurrent);
-        setDaily(day);
         setStatView('current'); // Switch to current period view after reset
       } else {
-        console.error('Reset error (accounts):', accError, 'Reset error (vendors):', vendorError);
+        console.error('Reset error (vendors):', vendorError);
         alert('Failed to reset analytics. Please try again.');
       }
     }
@@ -259,9 +263,9 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
             <Icons.User size={14} />
             @{session.username}
           </div>
-          {(vendor?.show_profile_url ?? false) && (
+           {(vendor?.show_profile_url ?? false) && (
             <a href={`#/${vendorUsername}`} target="_blank" rel="noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.85rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '50px', color: '#94a3b8', fontSize: '0.85rem', textDecoration: 'none', transition: 'all 0.2s' }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.85rem', background: 'transparent', border: '1px solid #cbd5e1', borderRadius: '50px', color: '#475569', fontSize: '0.85rem', textDecoration: 'none', transition: 'all 0.2s' }}>
               <Icons.ExternalLink size={13} />
               View Profile
             </a>
@@ -297,15 +301,15 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
             background: 'rgba(239, 68, 68, 0.15)',
             border: '1px solid #ef4444',
             borderRadius: '12px',
-            color: '#fca5a5',
+            color: '#7f1d1d',
             marginBottom: '1.5rem',
             animation: 'fadeInUp 0.3s ease'
           }}>
             <Icons.AlertOctagon size={24} style={{ color: '#ef4444', flexShrink: 0 }} />
             <div>
-              <strong style={{ display: 'block', fontSize: '1rem', color: '#fff', fontWeight: 700 }}>Subscription Expired</strong>
+              <strong style={{ display: 'block', fontSize: '1rem', color: '#991b1b', fontWeight: 700 }}>Subscription Expired</strong>
               <span style={{ fontSize: '0.85rem' }}>
-                Your DevTech profile access expired on <strong>{new Date(subExpiry!).toLocaleDateString()}</strong>. Some features may be restricted. Please contact support/admin to renew.
+                Your DevTech profile access expired on <strong style={{ color: '#991b1b' }}>{new Date(subExpiry!).toLocaleDateString()}</strong>. Some features may be restricted. Please contact support/admin to renew.
               </span>
             </div>
           </div>
@@ -321,15 +325,15 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
             background: 'rgba(245, 158, 11, 0.15)',
             border: '1px solid #f59e0b',
             borderRadius: '12px',
-            color: '#fef08a',
+            color: '#78350f',
             marginBottom: '1.5rem',
             animation: 'fadeInUp 0.3s ease'
           }}>
             <Icons.BellRing size={24} style={{ color: '#f59e0b', flexShrink: 0 }} />
             <div>
-              <strong style={{ display: 'block', fontSize: '1rem', color: '#fff', fontWeight: 700 }}>Subscription Expiring Soon</strong>
+              <strong style={{ display: 'block', fontSize: '1rem', color: '#92400e', fontWeight: 700 }}>Subscription Expiring Soon</strong>
               <span style={{ fontSize: '0.85rem' }}>
-                Your DevTech subscription has only <strong>{subDaysLeft} day{subDaysLeft !== 1 ? 's' : ''} left</strong> (expires on {new Date(subExpiry!).toLocaleDateString()}). Please renew shortly.
+                Your DevTech subscription has only <strong style={{ color: '#92400e' }}>{subDaysLeft} day{subDaysLeft !== 1 ? 's' : ''} left</strong> (expires on {new Date(subExpiry!).toLocaleDateString()}). Please renew shortly.
               </span>
             </div>
           </div>
@@ -404,7 +408,7 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
                 </div>
                 <div>
                   <div style={{ fontSize: '0.78rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: '4px' }}>Most Clicked Link</div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#f1f5f9', textTransform: 'capitalize' }}>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1F2937', textTransform: 'capitalize' }}>
                     {activeSummary.top_link}
                   </div>
                 </div>
@@ -486,7 +490,7 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
                       <img src={vendor.avatarUrl} alt="" style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} />
                       <div>
-                        <div style={{ fontWeight: 700, color: '#f1f5f9' }}>{vendor.name}</div>
+                        <div style={{ fontWeight: 700, color: '#1F2937' }}>{vendor.name}</div>
                         <div style={{ fontSize: '0.82rem', color: '#7660F1' }}>
                           {vendor.job_title ? vendor.job_title : `@${vendor.username}`}
                         </div>
@@ -499,7 +503,7 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
                       { label: 'Email', value: vendor.email || '—' },
                       { label: 'Subscription Expiry', value: subExpiry ? new Date(subExpiry).toLocaleDateString() : 'None' },
                     ].map((row, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '0.87rem' }}>
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid rgba(0,0,0,0.06)', fontSize: '0.87rem' }}>
                         <span style={{ color: '#64748b' }}>{row.label}</span>
                         <span style={{ color: '#94a3b8', fontWeight: 500 }}>{row.value}</span>
                       </div>
@@ -529,7 +533,7 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
                   Profile Sharing &amp; QR
                 </div>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.02)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.06)' }}>
                   <div style={{ padding: '10px', background: '#fff', borderRadius: '12px', display: 'inline-flex', boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>
                     <QRCodeCanvas 
                       id="profile-qr-canvas" 
@@ -543,25 +547,25 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <button className="submit-btn" onClick={downloadQR} style={{ margin: 0, padding: '0.5rem 0.9rem', fontSize: '0.82rem', flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <button className="submit-btn" onClick={downloadQR} style={{ margin: 0, padding: '0.5rem 0.9rem', fontSize: '0.82rem', flex: 1, background: '#f8fafc', border: '1px solid #cbd5e1', color: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                     <Icons.Download size={14} />
                     Download PNG
                   </button>
-                  <button className="submit-btn" onClick={printQR} style={{ margin: 0, padding: '0.5rem 0.9rem', fontSize: '0.82rem', flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <button className="submit-btn" onClick={printQR} style={{ margin: 0, padding: '0.5rem 0.9rem', fontSize: '0.82rem', flex: 1, background: '#f8fafc', border: '1px solid #cbd5e1', color: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                     <Icons.Printer size={14} />
                     Print
                   </button>
                 </div>
 
                 {(vendor?.show_profile_url ?? false) ? (
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <label style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Direct Profile Link</label>
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                       <input 
                         type="text" 
                         readOnly 
                         value={`https://devtechh.com/#/${vendorUsername}`} 
-                        style={{ flexGrow: 1, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '6px 10px', color: '#94a3b8', fontSize: '0.8rem', outline: 'none' }}
+                        style={{ flexGrow: 1, background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '6px 10px', color: '#475569', fontSize: '0.8rem', outline: 'none' }}
                       />
                       <button 
                         type="button"
@@ -574,16 +578,16 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
                     </div>
                   </div>
                 ) : (
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '0.78rem' }}>
+                  <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '0.78rem' }}>
                     <Icons.Lock size={12} />
                     <span>Direct profile link is hidden by Administrator</span>
                   </div>
                 )}
 
-                <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <div style={{ background: 'rgba(6,182,212,0.05)', border: '1px solid rgba(6,182,212,0.1)', borderRadius: '12px', padding: '10px', textAlign: 'center' }}>
                     <div style={{ fontSize: '0.72rem', color: '#06B6D4', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Today's Scans</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f1f5f9' }}>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0891b2' }}>
                       {(() => {
                         const todayPt = daily[daily.length - 1];
                         return todayPt ? todayPt.qr_scan : 0;
@@ -592,7 +596,7 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
                   </div>
                   <div style={{ background: 'rgba(6,182,212,0.05)', border: '1px solid rgba(6,182,212,0.1)', borderRadius: '12px', padding: '10px', textAlign: 'center' }}>
                     <div style={{ fontSize: '0.72rem', color: '#06B6D4', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>This Month</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f1f5f9' }}>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0891b2' }}>
                       {daily.reduce((sum, pt) => sum + pt.qr_scan, 0)}
                     </div>
                   </div>
