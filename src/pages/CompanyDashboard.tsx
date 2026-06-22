@@ -60,7 +60,7 @@ const COMPANY_STATS = [
 ];
 
 export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ companyUsername }) => {
-  const { vendors } = useApp();
+  const { vendors, vendorsLoading } = useApp();
   const [session, setSession] = useState<Session | null>(null);
   const [companyVendors, setCompanyVendors] = useState<typeof vendors>([]);
   const [summaries, setSummaries] = useState<Record<string, AnalyticsSummary>>({});
@@ -68,6 +68,7 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
   const [vendorDaily, setVendorDaily] = useState<DailyPoint[]>([]);
   const [chartRange, setChartRange] = useState<7 | 30>(7);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<keyof AnalyticsSummary>('profile_views');
   const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([]);
   const [chartGrouping, setChartGrouping] = useState<'daily' | 'weekly' | 'monthly'>('daily');
@@ -92,24 +93,34 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
   // NOTE: analytics_reset_at is read from vendors (not companies) because RLS blocks
   // updates to the companies table from the anon key. We store it on all company vendors.
   useEffect(() => {
-    if (!session || vendors.length === 0) return;
+    if (!session || vendorsLoading) return;
     const companyId = session.companyId;
 
     let isMounted = true;
     async function fetchCompanyInfo() {
       try {
         // Read subscription from companies
-        const { data: compData } = await supabase
+        const { data: compData, error: compError } = await supabase
           .from('companies')
           .select('subscription_end_date')
           .eq('id', companyId)
           .single();
 
+        if (compError) {
+          console.error('[Supabase Error] Failed to fetch company subscription details:', compError);
+          throw compError;
+        }
+
         // Get company vendor usernames
-        const { data: vendorRows } = await supabase
+        const { data: vendorRows, error: vendorError } = await supabase
           .from('vendors')
           .select('username, analytics_reset_at')
           .eq('company_id', companyId);
+
+        if (vendorError) {
+          console.error('[Supabase Error] Failed to fetch company vendors:', vendorError);
+          throw vendorError;
+        }
 
         const usernames = (vendorRows ?? []).map((r: { username: string }) => r.username);
         const myVendors = vendors.filter(v => usernames.includes(v.username));
@@ -126,15 +137,24 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
         }
       } catch (err) {
         console.error('Failed to load company info:', err);
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : String(err));
+          setLoading(false);
+        }
       }
     }
 
     fetchCompanyInfo();
     return () => { isMounted = false; };
-  }, [session, vendors]);
+  }, [session, vendors, vendorsLoading]);
 
   useEffect(() => {
-    if (!session || resetTimestamp === undefined || companyVendors.length === 0) return;
+    if (!session || resetTimestamp === undefined) return;
+
+    if (companyVendors.length === 0) {
+      setLoading(false);
+      return;
+    }
 
     let isMounted = true;
     async function fetchAnalytics() {
@@ -169,6 +189,9 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
         }
       } catch (err) {
         console.error('Failed to load company analytics:', err);
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : String(err));
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -353,7 +376,33 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
           </div>
         )}
 
-        {loading ? (
+        {error ? (
+          <div className="dash-card" style={{
+            textAlign: 'center',
+            padding: '4rem',
+            background: 'rgba(239, 68, 68, 0.05)',
+            borderColor: '#ef4444'
+          }}>
+            <Icons.AlertTriangle size={48} style={{ color: '#ef4444', marginBottom: '1rem', display: 'inline-block' }} />
+            <h3 style={{ color: '#f1f5f9', marginBottom: '0.5rem' }}>Failed to load dashboard data</h3>
+            <p style={{ color: '#ef4444', fontSize: '0.9rem', marginBottom: '1.5rem' }}>{error}</p>
+            <button
+              onClick={() => { setError(null); setLoading(true); setResetTimestamp(undefined); }}
+              style={{
+                background: 'rgba(239, 68, 68, 0.2)',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                borderRadius: '8px',
+                color: '#ef4444',
+                padding: '8px 16px',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                fontWeight: 600
+              }}
+            >
+              Retry Loading
+            </button>
+          </div>
+        ) : loading ? (
           <div style={{ textAlign: 'center', padding: '5rem', color: '#475569' }}>
             <Icons.Loader size={36} style={{ animation: 'spin 1s linear infinite', marginBottom: '1rem' }} />
             <p>Loading company analytics…</p>
