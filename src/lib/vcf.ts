@@ -71,15 +71,41 @@ export function generateVCF(vendor: {
     return;
   }
 
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  if (isAndroid) {
+    const notesParts = [];
+    if (vendor.website) notesParts.push(`Website: ${vendor.website}`);
+    notesParts.push(`Profile: ${profileUrl}`);
+    const notesStr = notesParts.join('\n');
+
+    // Build the android intent URI to open raw_contact insert screen in Contacts app
+    const intentUrl = `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/raw_contact;S.name=${encodeURIComponent(vendor.name)};S.phone=${encodeURIComponent(vendor.phone_number || '')};S.email=${encodeURIComponent(vendor.email || '')};S.company=${encodeURIComponent(vendor.companyName || '')};S.notes=${encodeURIComponent(notesStr)};end`;
+
+    const start = Date.now();
+    window.location.href = intentUrl;
+
+    // Fallback to download if the intent fails to open or is not supported
+    setTimeout(() => {
+      if (Date.now() - start < 1500) {
+        triggerDownload();
+      }
+    }, 800);
+    return;
+  }
+
   // ── All other browsers: Blob + createObjectURL ───────────────
-  const blob = new Blob([vcfContent], { type: 'text/vcard;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  triggerDownload();
+
+  function triggerDownload() {
+    const blob = new Blob([vcfContent], { type: 'text/vcard;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 }

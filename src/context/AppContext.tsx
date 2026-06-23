@@ -11,7 +11,7 @@ export interface Tab {
 }
 
 export interface ThemeConfig {
-  preset: 'sunset-glow' | 'cosmic-night' | 'emerald-forest' | 'electric-blue' | 'aurora' | 'royal-velvet' | 'light-glass' | 'dark-glass' | 'custom';
+  preset: 'sunset-glow' | 'cosmic-night' | 'emerald-forest' | 'electric-blue' | 'aurora' | 'royal-velvet' | 'light-glass' | 'dark-glass' | 'custom' | 'animated-aurora' | 'animated-mint' | 'animated-nebula' | 'animated-silk' | 'animated-obsidian';
   primaryColor?: string;
   background1?: string;
   background2?: string;

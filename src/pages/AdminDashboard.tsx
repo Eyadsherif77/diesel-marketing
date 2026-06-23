@@ -21,6 +21,12 @@ const PRESETS: { value: ThemeConfig['preset']; label: string; style: string }[] 
   { value: 'royal-velvet', label: 'Royal Velvet', style: 'linear-gradient(135deg, #2d0b3d 0%, #8b5cf6 100%)' },
   { value: 'light-glass', label: 'Light Glass', style: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)' },
   { value: 'dark-glass', label: 'Dark Glass', style: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' },
+  // Animated Presets
+  { value: 'animated-aurora', label: 'Aurora (Anim)', style: 'linear-gradient(120deg, #0f172a, #1e1b4b, #581c87, #0369a1)' },
+  { value: 'animated-mint', label: 'Mint Glow (Anim)', style: 'linear-gradient(135deg, #a7f3d0, #f472b6, #c084fc, #38bdf8)' },
+  { value: 'animated-nebula', label: 'Nebula (Anim)', style: 'linear-gradient(45deg, #090a0f, #1e1b4b, #312e81, #121829)' },
+  { value: 'animated-silk', label: 'Silk Flow (Anim)', style: 'linear-gradient(135deg, #fafaf9, #f5f5f4, #e0e7ff, #fae8ff)' },
+  { value: 'animated-obsidian', label: 'Obsidian (Anim)', style: 'linear-gradient(135deg, #090a0f, #1f2937, #111827, #374151)' },
   { value: 'custom', label: 'Custom Colors', style: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)' },
 ];
 
@@ -1552,7 +1558,7 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Live Preview Pane — uses PRESETS array for gradient so it always reflects current selection */}
+                    {/* Live Preview Pane ─ uses PRESETS array for gradient so it always reflects current selection */}
                     <div style={{ marginTop: '1.25rem', borderTop: '1px solid var(--border-admin)', paddingTop: '1.25rem' }}>
                       <label className="input-label" style={{ display: 'block', marginBottom: '0.75rem' }}>Live Preview</label>
                       {(() => {
@@ -1560,23 +1566,40 @@ export const AdminDashboard: React.FC = () => {
                         const previewBg = vendorTheme.preset === 'custom'
                           ? `linear-gradient(135deg, ${vendorTheme.background1 || '#6366f1'} 0%, ${vendorTheme.background2 || '#ec4899'} 100%)`
                           : (selectedPreset?.style || 'linear-gradient(135deg, #090a0f, #121829)');
-                        const previewTextColor = vendorTheme.preset === 'custom' ? (vendorTheme.textColor || '#ffffff') : '#ffffff';
-                        const previewCardBg = vendorTheme.preset === 'custom' ? (vendorTheme.cardBg || 'rgba(255,255,255,0.1)') : 'rgba(255,255,255,0.12)';
+                        
+                        const isLightPreset = ['light-glass', 'animated-mint', 'animated-silk'].includes(vendorTheme.preset || '');
+                        
+                        const previewTextColor = vendorTheme.preset === 'custom' 
+                          ? (vendorTheme.textColor || '#ffffff') 
+                          : (isLightPreset ? '#0f172a' : '#ffffff');
+                        
+                        const previewCardBg = vendorTheme.preset === 'custom' 
+                          ? (vendorTheme.cardBg || 'rgba(255,255,255,0.1)') 
+                          : (isLightPreset ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.12)');
+                        
+                        const previewBorder = isLightPreset
+                          ? '1px solid rgba(0, 0, 0, 0.08)'
+                          : '1px solid rgba(255, 255, 255, 0.15)';
+
+                        const themeClass = vendorTheme.preset === 'custom' ? 'custom-theme-wrapper' : `theme-${vendorTheme.preset}`;
+
                         return (
-                          <div style={{
-                            background: previewBg,
+                          <div className={`vendor-profile-wrapper ${themeClass}`} style={{
                             borderRadius: '20px',
                             padding: '1.5rem',
                             display: 'flex',
                             justifyContent: 'center',
                             alignItems: 'center',
-                            transition: 'background 0.4s ease'
+                            transition: 'background 0.4s ease',
+                            width: '100%',
+                            minHeight: 'auto',
+                            background: vendorTheme.preset === 'custom' ? previewBg : undefined
                           }}>
                             <div style={{
                               textAlign: 'center',
                               color: previewTextColor,
                               background: previewCardBg,
-                              border: '1px solid rgba(255,255,255,0.15)',
+                              border: previewBorder,
                               padding: '1.5rem',
                               borderRadius: '16px',
                               backdropFilter: 'blur(8px)',

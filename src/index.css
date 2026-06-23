@@ -150,6 +150,9 @@ button, input, select, textarea {
   font-weight: 800;
   margin-bottom: 0.35rem;
   letter-spacing: -0.02em;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .profile-username {
@@ -157,6 +160,9 @@ button, input, select, textarea {
   opacity: 0.8;
   margin-bottom: 1.25rem;
   display: inline-block;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .profile-bio {
@@ -164,6 +170,9 @@ button, input, select, textarea {
   line-height: 1.5;
   margin-bottom: 2rem;
   opacity: 0.85;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Dynamic Links list */
@@ -198,6 +207,15 @@ button, input, select, textarea {
 .vendor-link-tab .tab-text {
   flex-grow: 1;
   text-align: left;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.vendor-link-tab .tab-text span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .vendor-link-tab .tab-arrow {
@@ -250,6 +268,7 @@ button, input, select, textarea {
   font-weight: 500;
   transition: all 0.2s ease;
   cursor: pointer;
+  min-width: 0;
 }
 
 .vendor-link-tab-subitem:hover {
@@ -260,6 +279,10 @@ button, input, select, textarea {
 
 .vendor-link-tab-subitem .subitem-value {
   flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .vendor-link-tab-subitem .subitem-arrow {
@@ -785,13 +808,37 @@ button, input, select, textarea {
 
 .tab-editor-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.75rem;
   background: #FFFFFF;
   border: 1px solid var(--border-admin);
   padding: 0.75rem;
   border-radius: 10px;
   color: #1F2937;
+  flex-wrap: wrap;
+}
+
+.tab-editor-row > input[type="checkbox"] {
+  flex-shrink: 0;
+  margin-top: 8px;
+}
+
+.tab-editor-row > div:nth-child(2) {
+  flex-shrink: 0;
+  width: 100px;
+  padding-top: 8px;
+}
+
+.tab-editor-row > div:nth-child(3) {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+/* Ensure inputs inside flex-row layouts in Admin panel shrink properly */
+.tab-editor-row input.input-field,
+.tab-list-editor input.input-field,
+.input-group div[style*="display: flex"] input.input-field {
+  min-width: 0 !important;
 }
 
 /* Preset Picker */

@@ -27,9 +27,9 @@ export const CONTACT = {
   phone1Display: '010 6377 1764',
 
   /** Secondary phone — raw digits for tel: href */
-  phone2: '0127445066',
+  phone2: '01277445066',
   /** Secondary phone — human-readable display string */
-  phone2Display: '012 7445 066',
+  phone2Display: '012 7744 5066',
 
   /** Office location label */
   location: 'Cairo, Egypt',
