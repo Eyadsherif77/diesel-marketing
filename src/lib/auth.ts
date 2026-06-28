@@ -134,3 +134,29 @@ export async function fetchIndividualAccounts(): Promise<
     .order('created_at', { ascending: false });
   return data ?? [];
 }
+
+export async function deleteIndividualAccount(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('individual_accounts')
+    .delete()
+    .eq('id', id);
+  return !error;
+}
+
+export async function deleteCompanyAccount(id: string): Promise<boolean> {
+  // Safe company account deletion:
+  // First, unset company_id for any vendors associated with this company
+  // so we don't trigger cascade deletion or foreign key violation
+  await supabase
+    .from('vendors')
+    .update({ company_id: null })
+    .eq('company_id', id);
+
+  // Then delete the company record
+  const { error } = await supabase
+    .from('companies')
+    .delete()
+    .eq('id', id);
+  return !error;
+}
+

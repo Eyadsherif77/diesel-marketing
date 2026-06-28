@@ -8,6 +8,8 @@ import {
   createIndividualAccount,
   fetchAllCompanies,
   fetchIndividualAccounts,
+  deleteCompanyAccount,
+  deleteIndividualAccount,
 } from '../lib/auth';
 
 
@@ -894,7 +896,39 @@ export const AdminDashboard: React.FC = () => {
                               <span style={{ color: '#f1f5f9', fontWeight: 600 }}>{c.company_name}</span>
                               <span style={{ color: '#475569', marginLeft: '0.5rem' }}>@{c.username}</span>
                             </div>
-                            <span style={{ fontSize: '0.72rem', color: '#475569' }}>{new Date(c.created_at).toLocaleDateString()}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '0.72rem', color: '#475569' }}>{new Date(c.created_at).toLocaleDateString()}</span>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (window.confirm("Are you sure you want to delete this account?")) {
+                                    const success = await deleteCompanyAccount(c.id);
+                                    if (success) {
+                                      triggerAlert('success', 'Company account deleted successfully.');
+                                      loadAccounts();
+                                    } else {
+                                      triggerAlert('error', 'Failed to delete company account.');
+                                    }
+                                  }
+                                }}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: '#ef4444',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  padding: '4px',
+                                  borderRadius: '4px',
+                                  transition: 'background 0.2s',
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                title="Delete Account"
+                              >
+                                <Icons.Trash size={14} />
+                              </button>
+                            </div>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
@@ -972,7 +1006,39 @@ export const AdminDashboard: React.FC = () => {
                               <span style={{ color: 'var(--text-admin-primary)', fontWeight: 600 }}>@{a.username}</span>
                               <span style={{ color: '#818cf8', marginLeft: '0.5rem', fontSize: '0.78rem' }}>→ @{a.vendor_username}</span>
                             </div>
-                            <span style={{ fontSize: '0.72rem', color: '#475569' }}>{new Date(a.created_at).toLocaleDateString()}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '0.72rem', color: '#475569' }}>{new Date(a.created_at).toLocaleDateString()}</span>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (window.confirm("Are you sure you want to delete this account?")) {
+                                    const success = await deleteIndividualAccount(a.id);
+                                    if (success) {
+                                      triggerAlert('success', 'Individual account deleted successfully.');
+                                      loadAccounts();
+                                    } else {
+                                      triggerAlert('error', 'Failed to delete individual account.');
+                                    }
+                                  }
+                                }}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: '#ef4444',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  padding: '4px',
+                                  borderRadius: '4px',
+                                  transition: 'background 0.2s',
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                title="Delete Account"
+                              >
+                                <Icons.Trash size={14} />
+                              </button>
+                            </div>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>

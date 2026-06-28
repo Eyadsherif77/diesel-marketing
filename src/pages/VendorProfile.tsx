@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import * as Icons from 'lucide-react';
 import '../ThemeStyles.css';
@@ -104,6 +104,42 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
   const { vendors } = useApp();
   const vendor = vendors.find(v => v.username.toLowerCase() === username.toLowerCase());
   const trackedRef = useRef(false);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const [pdfRenderUrl, setPdfRenderUrl] = useState('');
+
+  useEffect(() => {
+    if (!vendor?.portfolioPdfUrl) {
+      setPdfRenderUrl('');
+      return;
+    }
+
+    const rawUrl = vendor.portfolioPdfUrl;
+    if (rawUrl.startsWith('data:') && rawUrl.includes(';base64,')) {
+      try {
+        const parts = rawUrl.split(',');
+        const mime = parts[0].match(/:(.*?);/)?.[1] || 'application/pdf';
+        const base64Data = parts[1];
+        const binaryString = atob(base64Data);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: mime });
+        const blobUrl = URL.createObjectURL(blob);
+        setPdfRenderUrl(blobUrl);
+
+        return () => {
+          URL.revokeObjectURL(blobUrl);
+        };
+      } catch (e) {
+        console.error('Failed to convert base64 PDF to blob URL:', e);
+        setPdfRenderUrl(rawUrl);
+      }
+    } else {
+      setPdfRenderUrl(rawUrl);
+    }
+  }, [vendor?.portfolioPdfUrl]);
 
   // Effective language: vendor default > 'en'
   const effectiveLang: 'en' | 'ar' = vendor?.language ?? 'en';
@@ -361,16 +397,32 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
                 <div className="portfolio-subtitle">{isAr ? 'مستند PDF' : 'PDF Document'}</div>
               </div>
             </div>
-            <a
-              href={vendor.portfolioPdfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="portfolio-download-btn"
-              onClick={handlePdfClick}
-            >
-              <Icons.Download size={14} />
-              {isAr ? 'عرض' : 'View'}
-            </a>
+            <div className="portfolio-actions" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="portfolio-download-btn"
+                onClick={() => {
+                  handlePdfClick();
+                  setIsPdfModalOpen(true);
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                <Icons.Eye size={14} />
+                {isAr ? 'عرض' : 'View'}
+              </button>
+              <a
+                href={vendor.portfolioPdfUrl}
+                download={vendor.portfolioPdfName || "portfolio.pdf"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="portfolio-download-btn"
+                onClick={handlePdfClick}
+                style={{ textDecoration: 'none', color: 'inherit' }}
+              >
+                <Icons.Download size={14} />
+                {isAr ? 'تنزيل' : 'Download'}
+              </a>
+            </div>
           </div>
         )}
 
@@ -385,6 +437,48 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
         </div>
 
       </div>
+
+      {isPdfModalOpen && (
+        <div className="pdf-modal-overlay" onClick={() => setIsPdfModalOpen(false)}>
+          <div className="pdf-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="pdf-modal-header">
+              <div className="pdf-modal-title-sec">
+                <h3 className="pdf-modal-title">{vendor.portfolioPdfName || (isAr ? 'ملف الأعمال' : 'Business Portfolio')}</h3>
+                <span className="pdf-modal-subtitle">{isAr ? 'مستند PDF' : 'PDF Document'}</span>
+              </div>
+              <div className="pdf-modal-actions">
+                <a
+                  href={vendor.portfolioPdfUrl}
+                  download={vendor.portfolioPdfName || "portfolio.pdf"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="pdf-modal-btn pdf-modal-download-btn"
+                  onClick={handlePdfClick}
+                  title={isAr ? 'تنزيل PDF' : 'Download PDF'}
+                >
+                  <Icons.Download size={16} />
+                  <span>{isAr ? 'تنزيل' : 'Download'}</span>
+                </a>
+                <button
+                  type="button"
+                  className="pdf-modal-close-btn"
+                  onClick={() => setIsPdfModalOpen(false)}
+                  title={isAr ? 'إغلاق' : 'Close'}
+                >
+                  <Icons.X size={20} />
+                </button>
+              </div>
+            </div>
+            <div className="pdf-modal-body">
+              <iframe
+                src={pdfRenderUrl}
+                title={vendor.portfolioPdfName || "Portfolio PDF"}
+                className="pdf-modal-iframe"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
