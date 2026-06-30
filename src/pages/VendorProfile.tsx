@@ -4,6 +4,7 @@ import * as Icons from 'lucide-react';
 import '../ThemeStyles.css';
 import { trackEvent } from '../lib/analytics';
 import { generateVCF } from '../lib/vcf';
+import { MobilePdfViewer } from '../components/MobilePdfViewer';
 
 // ─── Dynamic Lucide icon renderer ─────────────────────────────────────────────
 const DynamicIcon = ({ name, size = 20 }: { name: string; size?: number }) => {
@@ -106,6 +107,20 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
   const trackedRef = useRef(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [pdfRenderUrl, setPdfRenderUrl] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+      const isIOS = /iPad|iPhone|iPod/.test(userAgent) || 
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isAndroid = /Android/i.test(userAgent);
+      setIsMobile(isIOS || isAndroid || window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (!vendor?.portfolioPdfUrl) {
@@ -258,28 +273,7 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
     e.preventDefault();
     if (!vendor) return;
     handlePdfClick();
-
-    // Check if mobile
-    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
-    const isIOS = /iPad|iPhone|iPod/.test(userAgent) || 
-                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const isAndroid = /Android/i.test(userAgent);
-    const isMobile = isIOS || isAndroid;
-
-    console.log('[PDF View] Initiating view process.', { isMobile, pdfRenderUrl });
-
-    if (isMobile) {
-      if (pdfRenderUrl) {
-        console.log('[PDF View] Mobile detected. Opening PDF blob URL in a new tab.');
-        window.open(pdfRenderUrl, '_blank');
-      } else {
-        console.log('[PDF View] Mobile detected but pdfRenderUrl is empty. Opening raw URL in a new tab.');
-        window.open(vendor.portfolioPdfUrl, '_blank');
-      }
-    } else {
-      console.log('[PDF View] Desktop detected. Opening PDF modal.');
-      setIsPdfModalOpen(true);
-    }
+    setIsPdfModalOpen(true);
   };
 
   const handlePdfDownload = async (e: React.MouseEvent) => {
@@ -570,43 +564,56 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
       </div>
 
       {isPdfModalOpen && (
-        <div className="pdf-modal-overlay" onClick={() => setIsPdfModalOpen(false)}>
-          <div className="pdf-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="pdf-modal-header">
-              <div className="pdf-modal-title-sec">
-                <h3 className="pdf-modal-title">{vendor.portfolioPdfName || (isAr ? 'ملف الأعمال' : 'Business Portfolio')}</h3>
-                <span className="pdf-modal-subtitle">{isAr ? 'مستند PDF' : 'PDF Document'}</span>
+        isMobile ? (
+          <MobilePdfViewer
+            url={pdfRenderUrl || vendor.portfolioPdfUrl}
+            fileName={vendor.portfolioPdfName}
+            onClose={() => setIsPdfModalOpen(false)}
+            onDownload={() => {
+              const dummyEvent = { preventDefault: () => {} } as React.MouseEvent;
+              handlePdfDownload(dummyEvent);
+            }}
+            isAr={isAr}
+          />
+        ) : (
+          <div className="pdf-modal-overlay" onClick={() => setIsPdfModalOpen(false)}>
+            <div className="pdf-modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="pdf-modal-header">
+                <div className="pdf-modal-title-sec">
+                  <h3 className="pdf-modal-title">{vendor.portfolioPdfName || (isAr ? 'ملف الأعمال' : 'Business Portfolio')}</h3>
+                  <span className="pdf-modal-subtitle">{isAr ? 'مستند PDF' : 'PDF Document'}</span>
+                </div>
+                <div className="pdf-modal-actions">
+                  <button
+                    type="button"
+                    className="pdf-modal-btn pdf-modal-download-btn"
+                    onClick={handlePdfDownload}
+                    title={isAr ? 'تنزيل PDF' : 'Download PDF'}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <Icons.Download size={16} />
+                    <span>{isAr ? 'تنزيل' : 'Download'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="pdf-modal-close-btn"
+                    onClick={() => setIsPdfModalOpen(false)}
+                    title={isAr ? 'إغلاق' : 'Close'}
+                  >
+                    <Icons.X size={20} />
+                  </button>
+                </div>
               </div>
-              <div className="pdf-modal-actions">
-                <button
-                  type="button"
-                  className="pdf-modal-btn pdf-modal-download-btn"
-                  onClick={handlePdfDownload}
-                  title={isAr ? 'تنزيل PDF' : 'Download PDF'}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <Icons.Download size={16} />
-                  <span>{isAr ? 'تنزيل' : 'Download'}</span>
-                </button>
-                <button
-                  type="button"
-                  className="pdf-modal-close-btn"
-                  onClick={() => setIsPdfModalOpen(false)}
-                  title={isAr ? 'إغلاق' : 'Close'}
-                >
-                  <Icons.X size={20} />
-                </button>
+              <div className="pdf-modal-body">
+                <iframe
+                  src={pdfRenderUrl}
+                  title={vendor.portfolioPdfName || "Portfolio PDF"}
+                  className="pdf-modal-iframe"
+                />
               </div>
-            </div>
-            <div className="pdf-modal-body">
-              <iframe
-                src={pdfRenderUrl}
-                title={vendor.portfolioPdfName || "Portfolio PDF"}
-                className="pdf-modal-iframe"
-              />
             </div>
           </div>
-        </div>
+        )
       )}
     </div>
   );
