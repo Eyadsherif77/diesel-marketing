@@ -254,6 +254,115 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
     trackEvent(vendor.username, 'pdf_download');
   };
 
+  const handlePdfDownload = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!vendor) return;
+    handlePdfClick();
+
+    const rawUrl = vendor.portfolioPdfUrl;
+    const fileName = vendor.portfolioPdfName || "portfolio.pdf";
+
+    console.log('[PDF Download] Initiating download process.', { fileName, hasRawUrl: !!rawUrl });
+
+    if (!rawUrl) {
+      console.error('[PDF Download] PDF URL is empty.');
+      return;
+    }
+
+    try {
+      let blob: Blob;
+
+      // 1. Get Blob representation of the PDF
+      if (rawUrl.startsWith('data:') && rawUrl.includes(';base64,')) {
+        console.log('[PDF Download] Parsing Base64 data URL to Blob.');
+        const parts = rawUrl.split(',');
+        const mime = parts[0].match(/:(.*?);/)?.[1] || 'application/pdf';
+        const base64Data = parts[1];
+        const binaryString = atob(base64Data);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        blob = new Blob([bytes], { type: mime });
+      } else {
+        console.log('[PDF Download] Fetching PDF from remote URL.');
+        const response = await fetch(rawUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch remote PDF: ${response.statusText}`);
+        }
+        blob = await response.blob();
+      }
+
+      console.log('[PDF Download] Blob created successfully.', { size: blob.size, type: blob.type });
+
+      // Create blob URL for downloading/opening
+      const blobUrl = URL.createObjectURL(blob);
+      
+      // Check user agent / platform
+      const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+      const isIOS = /iPad|iPhone|iPod/.test(userAgent) || 
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isAndroid = /Android/i.test(userAgent);
+      const isMobile = isIOS || isAndroid;
+
+      console.log('[PDF Download] Platform check:', { isIOS, isAndroid, isMobile });
+
+      // 2. Try Native Web Share API first on mobile (if supported and files can be shared)
+      if (isMobile && navigator.canShare) {
+        try {
+          const file = new File([blob], fileName, { type: 'application/pdf' });
+          if (navigator.canShare({ files: [file] })) {
+            console.log('[PDF Download] Web Share API is supported. Triggering share dialog.');
+            await navigator.share({
+              files: [file],
+              title: fileName,
+              text: `View or save PDF: ${fileName}`,
+            });
+            console.log('[PDF Download] Web Share API completed successfully.');
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+            return;
+          } else {
+            console.warn('[PDF Download] Web Share API does not support sharing this PDF file.');
+          }
+        } catch (shareError) {
+          console.error('[PDF Download] Native share failed or was cancelled:', shareError);
+          // Don't return, fallback to other methods
+        }
+      }
+
+      // 3. Platform-specific fallbacks
+      if (isIOS) {
+        // On iOS Safari/Chrome, directly triggering anchor click on blobUrl does not download and may fail.
+        // Opening the blobUrl in a new tab allows Safari to show it and provides native share/save options.
+        console.log('[PDF Download] iOS fallback: Opening Blob URL in a new tab.');
+        window.open(blobUrl, '_blank');
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      } else {
+        // On Android/Desktop, trigger anchor download with blobUrl
+        console.log('[PDF Download] Triggering standard anchor download with Blob URL.');
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = fileName;
+        a.style.display = 'none';
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        
+        // Clean up
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(blobUrl);
+        }, 1000);
+      }
+
+    } catch (error) {
+      console.error('[PDF Download] Download workflow failed. Falling back to direct URL open:', error);
+      // Absolute fallback: open the raw URL in a new tab
+      window.open(rawUrl, '_blank');
+    }
+  };
+
   return (
     <div className={`vendor-profile-wrapper ${themeClass}`} style={wrapperStyles} dir={isAr ? 'rtl' : 'ltr'}>
 
@@ -410,18 +519,15 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
                 <Icons.Eye size={14} />
                 {isAr ? 'عرض' : 'View'}
               </button>
-              <a
-                href={vendor.portfolioPdfUrl}
-                download={vendor.portfolioPdfName || "portfolio.pdf"}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
                 className="portfolio-download-btn"
-                onClick={handlePdfClick}
-                style={{ textDecoration: 'none', color: 'inherit' }}
+                onClick={handlePdfDownload}
+                style={{ cursor: 'pointer' }}
               >
                 <Icons.Download size={14} />
                 {isAr ? 'تنزيل' : 'Download'}
-              </a>
+              </button>
             </div>
           </div>
         )}
@@ -447,18 +553,16 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
                 <span className="pdf-modal-subtitle">{isAr ? 'مستند PDF' : 'PDF Document'}</span>
               </div>
               <div className="pdf-modal-actions">
-                <a
-                  href={vendor.portfolioPdfUrl}
-                  download={vendor.portfolioPdfName || "portfolio.pdf"}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
                   className="pdf-modal-btn pdf-modal-download-btn"
-                  onClick={handlePdfClick}
+                  onClick={handlePdfDownload}
                   title={isAr ? 'تنزيل PDF' : 'Download PDF'}
+                  style={{ cursor: 'pointer' }}
                 >
                   <Icons.Download size={16} />
                   <span>{isAr ? 'تنزيل' : 'Download'}</span>
-                </a>
+                </button>
                 <button
                   type="button"
                   className="pdf-modal-close-btn"
