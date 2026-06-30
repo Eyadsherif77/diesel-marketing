@@ -254,6 +254,34 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
     trackEvent(vendor.username, 'pdf_download');
   };
 
+  const handlePdfView = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!vendor) return;
+    handlePdfClick();
+
+    // Check if mobile
+    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isAndroid = /Android/i.test(userAgent);
+    const isMobile = isIOS || isAndroid;
+
+    console.log('[PDF View] Initiating view process.', { isMobile, pdfRenderUrl });
+
+    if (isMobile) {
+      if (pdfRenderUrl) {
+        console.log('[PDF View] Mobile detected. Opening PDF blob URL in a new tab.');
+        window.open(pdfRenderUrl, '_blank');
+      } else {
+        console.log('[PDF View] Mobile detected but pdfRenderUrl is empty. Opening raw URL in a new tab.');
+        window.open(vendor.portfolioPdfUrl, '_blank');
+      }
+    } else {
+      console.log('[PDF View] Desktop detected. Opening PDF modal.');
+      setIsPdfModalOpen(true);
+    }
+  };
+
   const handlePdfDownload = async (e: React.MouseEvent) => {
     e.preventDefault();
     if (!vendor) return;
@@ -510,10 +538,7 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
               <button
                 type="button"
                 className="portfolio-download-btn"
-                onClick={() => {
-                  handlePdfClick();
-                  setIsPdfModalOpen(true);
-                }}
+                onClick={handlePdfView}
                 style={{ cursor: 'pointer' }}
               >
                 <Icons.Eye size={14} />
