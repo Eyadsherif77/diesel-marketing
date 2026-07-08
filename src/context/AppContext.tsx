@@ -8,6 +8,7 @@ export interface Tab {
   value: string;
   iconName: string;
   active: boolean;
+  customLabel?: string;
 }
 
 export interface ThemeConfig {

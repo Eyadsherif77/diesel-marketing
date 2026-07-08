@@ -1721,33 +1721,59 @@ export const AdminDashboard: React.FC = () => {
                           </div>
 
                           {tab.type === 'custom' ? (
-                            <div style={{ display: 'flex', flexGrow: 1, gap: '8px', alignItems: 'center' }}>
-                              <input 
-                                type="text"
-                                placeholder="Paste any URL (e.g. instagram.com/you)"
-                                value={tab.value}
-                                onChange={(e) => {
-                                  const newUrl = e.target.value;
-                                  const detected = detectUrlDetails(newUrl);
-                                  setVendorTabs(prev => prev.map(t => t.id === tab.id ? { ...t, value: newUrl, label: detected.label, iconName: detected.iconName } : t));
-                                }}
-                                className="input-field"
-                                style={{ padding: '0.45rem 0.75rem', fontSize: '0.85rem', flexGrow: 1 }}
-                              />
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-admin-secondary)', whiteSpace: 'nowrap', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <span style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc', padding: '2px 8px', borderRadius: '6px', fontWeight: 600 }}>{tab.label}</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '8px' }}>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', width: '100%' }}>
+                                <input 
+                                  type="text"
+                                  placeholder="Paste any URL (e.g. instagram.com/you)"
+                                  value={tab.value}
+                                  onChange={(e) => {
+                                    const newUrl = e.target.value;
+                                    const detected = detectUrlDetails(newUrl);
+                                    setVendorTabs(prev => prev.map(t => t.id === tab.id ? { ...t, value: newUrl, label: detected.label, iconName: detected.iconName } : t));
+                                  }}
+                                  className="input-field"
+                                  style={{ padding: '0.45rem 0.75rem', fontSize: '0.85rem', flexGrow: 1 }}
+                                />
+                                <button 
+                                  type="button" 
+                                  className="admin-btn admin-btn-danger" 
+                                  style={{ padding: '0.45rem', borderRadius: '8px', flexShrink: 0 }}
+                                  onClick={() => handleRemoveCustomTab(tab.id)}
+                                >
+                                  <Icons.Trash2 size={14} />
+                                </button>
                               </div>
-                              <button 
-                                type="button" 
-                                className="admin-btn admin-btn-danger" 
-                                style={{ padding: '0.45rem', borderRadius: '8px' }}
-                                onClick={() => handleRemoveCustomTab(tab.id)}
-                              >
-                                <Icons.Trash2 size={14} />
-                              </button>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', width: '100%' }}>
+                                <input 
+                                  type="text"
+                                  placeholder="Label / Name (Optional - e.g. Nasr City Branch)"
+                                  value={tab.customLabel || ''}
+                                  onChange={(e) => {
+                                    const newLabel = e.target.value;
+                                    setVendorTabs(prev => prev.map(t => t.id === tab.id ? { ...t, customLabel: newLabel } : t));
+                                  }}
+                                  className="input-field"
+                                  style={{ padding: '0.45rem 0.75rem', fontSize: '0.85rem', flexGrow: 1, minWidth: '180px' }}
+                                />
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-admin-secondary)', whiteSpace: 'nowrap', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <span style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc', padding: '2px 8px', borderRadius: '6px', fontWeight: 600 }}>{tab.label}</span>
+                                </div>
+                              </div>
                             </div>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '12px' }}>
+                              <input 
+                                type="text"
+                                placeholder={`Label / Name (Optional - default: ${tab.label})`}
+                                value={tab.customLabel || ''}
+                                onChange={(e) => {
+                                  const newLabel = e.target.value;
+                                  setVendorTabs(prev => prev.map(t => t.id === tab.id ? { ...t, customLabel: newLabel } : t));
+                                }}
+                                className="input-field"
+                                style={{ padding: '0.45rem 0.75rem', fontSize: '0.85rem', width: '100%' }}
+                              />
                               {(tab.value || '').split('|||').map((val, idx, arr) => (
                                 <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                   <input 

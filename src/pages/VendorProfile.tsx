@@ -461,7 +461,7 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
                   {/* Header row — icon + label only */}
                   <span className="tab-icon">{iconEl}</span>
                   <span className="tab-text">
-                    <span style={{ display: 'block', fontWeight: 700, fontSize: '0.95rem' }}>{tab.label}</span>
+                    <span style={{ display: 'block', fontWeight: 700, fontSize: '0.95rem' }}>{tab.customLabel || tab.label}</span>
                   </span>
                   {/* Stacked sub-links */}
                   <div className="vendor-link-tab-subitems">
@@ -501,7 +501,7 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
               >
                 <span className="tab-icon">{iconEl}</span>
                 <span className="tab-text">
-                  <span style={{ display: 'block', fontWeight: 700, fontSize: '0.95rem' }}>{tab.label}</span>
+                  <span style={{ display: 'block', fontWeight: 700, fontSize: '0.95rem' }}>{tab.customLabel || tab.label}</span>
                   {displayValue && (
                     <span style={{ display: 'block', fontSize: '0.75rem', opacity: 0.65, marginTop: '1px' }}>
                       {displayValue}
