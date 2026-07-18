@@ -1,10 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
+import type { Vendor } from '../context/AppContext';
 import * as Icons from 'lucide-react';
 import '../ThemeStyles.css';
 import { trackEvent } from '../lib/analytics';
 import { generateVCF } from '../lib/vcf';
-import { MobilePdfViewer } from '../components/MobilePdfViewer';
+
+// Lazy load the MobilePdfViewer component to avoid loading heavy PDF.js libraries on initial load
+const MobilePdfViewer = React.lazy(() =>
+  import('../components/MobilePdfViewer').then((m) => ({ default: m.MobilePdfViewer }))
+);
 
 // ─── Dynamic Lucide icon renderer ─────────────────────────────────────────────
 const DynamicIcon = ({ name, size = 20 }: { name: string; size?: number }) => {
@@ -44,10 +49,8 @@ const getTabUrl = (type: string, value: string) => {
     case 'phone':
       return `tel:${cleanValue.replace(/\s/g, '')}`;
     case 'instapay':
-      // Value is normally the full InstaPay link
       return cleanValue.includes('.') ? `https://${cleanValue}` : cleanValue;
     case 'custom':
-      // Auto-prepend https:// if missing
       if (!cleanValue) return '#';
       if (cleanValue.startsWith('http://') || cleanValue.startsWith('https://')) {
         return cleanValue;
@@ -102,12 +105,36 @@ interface VendorProfileProps {
 }
 
 export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
-  const { vendors } = useApp();
-  const vendor = vendors.find(v => v.username.toLowerCase() === username.toLowerCase());
+  const { fetchVendorByUsername } = useApp();
+  const [vendor, setVendor] = useState<Vendor | null>(null);
+  const [loading, setLoading] = useState(true);
   const trackedRef = useRef(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [pdfRenderUrl, setPdfRenderUrl] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+
+  // 1. Fetch vendor profile on mount / username change
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    fetchVendorByUsername(username)
+      .then((data) => {
+        if (active) {
+          setVendor(data);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load profile:', err);
+        if (active) {
+          setVendor(null);
+          setLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [username, fetchVendorByUsername]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -177,6 +204,177 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
     }
   }, [vendor]);
 
+  const handleLinkClick = useCallback((tabType: string) => {
+    if (vendor) {
+      trackEvent(vendor.username, 'link_click', tabType);
+    }
+  }, [vendor]);
+
+  const handleVCFClick = useCallback(() => {
+    if (!vendor) return;
+    trackEvent(vendor.username, 'vcf_download');
+    generateVCF({
+      name: vendor.name,
+      companyName: vendor.companyName,
+      phone_number: vendor.phone_number,
+      email: vendor.email,
+      website: vendor.website,
+      username: vendor.username,
+    });
+  }, [vendor]);
+
+  const handlePdfClick = useCallback(() => {
+    if (vendor) {
+      trackEvent(vendor.username, 'pdf_download');
+    }
+  }, [vendor]);
+
+  const handlePdfView = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!vendor) return;
+    handlePdfClick();
+    setIsPdfModalOpen(true);
+  }, [vendor, handlePdfClick]);
+
+  const handlePdfDownload = useCallback(async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!vendor) return;
+    handlePdfClick();
+
+    const rawUrl = vendor.portfolioPdfUrl;
+    const fileName = vendor.portfolioPdfName || "portfolio.pdf";
+
+    console.log('[PDF Download] Initiating download process.', { fileName, hasRawUrl: !!rawUrl });
+
+    if (!rawUrl) {
+      console.error('[PDF Download] PDF URL is empty.');
+      return;
+    }
+
+    try {
+      let blob: Blob;
+
+      if (rawUrl.startsWith('data:') && rawUrl.includes(';base64,')) {
+        console.log('[PDF Download] Parsing Base64 data URL to Blob.');
+        const parts = rawUrl.split(',');
+        const mime = parts[0].match(/:(.*?);/)?.[1] || 'application/pdf';
+        const base64Data = parts[1];
+        const binaryString = atob(base64Data);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        blob = new Blob([bytes], { type: mime });
+      } else {
+        console.log('[PDF Download] Fetching PDF from remote URL.');
+        const response = await fetch(rawUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch remote PDF: ${response.statusText}`);
+        }
+        blob = await response.blob();
+      }
+
+      console.log('[PDF Download] Blob created successfully.', { size: blob.size, type: blob.type });
+
+      const blobUrl = URL.createObjectURL(blob);
+      
+      const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+      const isIOS = /iPad|iPhone|iPod/.test(userAgent) || 
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isAndroid = /Android/i.test(userAgent);
+      const isMobileDevice = isIOS || isAndroid;
+
+      console.log('[PDF Download] Platform check:', { isIOS, isAndroid, isMobile: isMobileDevice });
+
+      if (isMobileDevice && navigator.canShare) {
+        try {
+          const file = new File([blob], fileName, { type: 'application/pdf' });
+          if (navigator.canShare({ files: [file] })) {
+            console.log('[PDF Download] Web Share API is supported. Triggering share dialog.');
+            await navigator.share({
+              files: [file],
+              title: fileName,
+              text: `View or save PDF: ${fileName}`,
+            });
+            console.log('[PDF Download] Web Share API completed successfully.');
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+            return;
+          } else {
+            console.warn('[PDF Download] Web Share API does not support sharing this PDF file.');
+          }
+        } catch (shareError) {
+          console.error('[PDF Download] Native share failed or was cancelled:', shareError);
+        }
+      }
+
+      if (isIOS) {
+        console.log('[PDF Download] iOS fallback: Opening Blob URL in a new tab.');
+        window.open(blobUrl, '_blank');
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      } else {
+        console.log('[PDF Download] Triggering standard anchor download with Blob URL.');
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = fileName;
+        a.style.display = 'none';
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(blobUrl);
+        }, 1000);
+      }
+
+    } catch (error) {
+      console.error('[PDF Download] Download workflow failed. Falling back to direct URL open:', error);
+      window.open(rawUrl, '_blank');
+    }
+  }, [vendor, handlePdfClick]);
+
+  // Loading skeleton screen
+  if (loading) {
+    return (
+      <div className="vendor-profile-wrapper theme-dark-glass">
+        <div className="profile-card animate-fade-in" style={{ width: '100%', maxWidth: '480px' }}>
+          {/* Company Badge Skeleton */}
+          <div className="skeleton-line" style={{ width: '100px', height: '20px', borderRadius: '12px', margin: '0 auto 1.5rem auto' }} />
+          
+          {/* Avatar Skeleton */}
+          <div className="profile-avatar-container" style={{ width: '120px', height: '120px', margin: '0 auto', background: 'transparent' }}>
+            <div className="skeleton-line" style={{ width: '120px', height: '120px', borderRadius: '50%' }} />
+          </div>
+          
+          {/* Name Skeleton */}
+          <div className="skeleton-line" style={{ width: '180px', height: '28px', borderRadius: '6px', margin: '1.5rem auto 0.5rem auto' }} />
+          
+          {/* Job Title Skeleton */}
+          <div className="skeleton-line" style={{ width: '120px', height: '18px', borderRadius: '4px', margin: '0 auto 1rem auto' }} />
+          
+          {/* Bio Skeletons */}
+          <div className="skeleton-line" style={{ width: '85%', height: '14px', borderRadius: '4px', margin: '0 auto 0.5rem auto' }} />
+          <div className="skeleton-line" style={{ width: '70%', height: '14px', borderRadius: '4px', margin: '0 auto 2rem auto' }} />
+          
+          {/* Action Buttons Skeletons */}
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem' }}>
+            <div className="skeleton-line" style={{ width: '130px', height: '44px', borderRadius: '22px' }} />
+            <div className="skeleton-line" style={{ width: '130px', height: '44px', borderRadius: '22px' }} />
+          </div>
+          
+          {/* Tab List Skeletons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <div className="skeleton-line" style={{ width: '100%', height: '56px', borderRadius: '12px' }} />
+            <div className="skeleton-line" style={{ width: '100%', height: '56px', borderRadius: '12px' }} />
+            <div className="skeleton-line" style={{ width: '100%', height: '56px', borderRadius: '12px' }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Not Found view
   if (!vendor) {
     return (
       <div className="buy-page-container">
@@ -241,149 +439,11 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
 
   const themeClass = isCustomTheme ? 'custom-theme-wrapper' : `theme-${theme.preset}`;
 
-  // ─── Active tabs filter — for custom tabs require label, for others require at least one non-empty value ──
   const activeTabs = vendor.tabs.filter(tab => {
     if (!tab.active) return false;
-    if (tab.type === 'custom') return tab.label.trim() !== '';  // custom only needs a label
-    // For standard tabs, check if at least one sub-value (split by |||) is non-empty
+    if (tab.type === 'custom') return tab.label.trim() !== '';
     return tab.value.split('|||').some(v => v.trim() !== '');
   });
-
-  const handleLinkClick = (tabType: string) => {
-    trackEvent(vendor.username, 'link_click', tabType);
-  };
-
-  const handleVCFClick = () => {
-    trackEvent(vendor.username, 'vcf_download');
-    generateVCF({
-      name: vendor.name,
-      companyName: vendor.companyName,
-      phone_number: vendor.phone_number,
-      email: vendor.email,
-      website: vendor.website,
-      username: vendor.username,
-    });
-  };
-
-  const handlePdfClick = () => {
-    trackEvent(vendor.username, 'pdf_download');
-  };
-
-  const handlePdfView = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!vendor) return;
-    handlePdfClick();
-    setIsPdfModalOpen(true);
-  };
-
-  const handlePdfDownload = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!vendor) return;
-    handlePdfClick();
-
-    const rawUrl = vendor.portfolioPdfUrl;
-    const fileName = vendor.portfolioPdfName || "portfolio.pdf";
-
-    console.log('[PDF Download] Initiating download process.', { fileName, hasRawUrl: !!rawUrl });
-
-    if (!rawUrl) {
-      console.error('[PDF Download] PDF URL is empty.');
-      return;
-    }
-
-    try {
-      let blob: Blob;
-
-      // 1. Get Blob representation of the PDF
-      if (rawUrl.startsWith('data:') && rawUrl.includes(';base64,')) {
-        console.log('[PDF Download] Parsing Base64 data URL to Blob.');
-        const parts = rawUrl.split(',');
-        const mime = parts[0].match(/:(.*?);/)?.[1] || 'application/pdf';
-        const base64Data = parts[1];
-        const binaryString = atob(base64Data);
-        const len = binaryString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        blob = new Blob([bytes], { type: mime });
-      } else {
-        console.log('[PDF Download] Fetching PDF from remote URL.');
-        const response = await fetch(rawUrl);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch remote PDF: ${response.statusText}`);
-        }
-        blob = await response.blob();
-      }
-
-      console.log('[PDF Download] Blob created successfully.', { size: blob.size, type: blob.type });
-
-      // Create blob URL for downloading/opening
-      const blobUrl = URL.createObjectURL(blob);
-      
-      // Check user agent / platform
-      const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
-      const isIOS = /iPad|iPhone|iPod/.test(userAgent) || 
-                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      const isAndroid = /Android/i.test(userAgent);
-      const isMobile = isIOS || isAndroid;
-
-      console.log('[PDF Download] Platform check:', { isIOS, isAndroid, isMobile });
-
-      // 2. Try Native Web Share API first on mobile (if supported and files can be shared)
-      if (isMobile && navigator.canShare) {
-        try {
-          const file = new File([blob], fileName, { type: 'application/pdf' });
-          if (navigator.canShare({ files: [file] })) {
-            console.log('[PDF Download] Web Share API is supported. Triggering share dialog.');
-            await navigator.share({
-              files: [file],
-              title: fileName,
-              text: `View or save PDF: ${fileName}`,
-            });
-            console.log('[PDF Download] Web Share API completed successfully.');
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-            return;
-          } else {
-            console.warn('[PDF Download] Web Share API does not support sharing this PDF file.');
-          }
-        } catch (shareError) {
-          console.error('[PDF Download] Native share failed or was cancelled:', shareError);
-          // Don't return, fallback to other methods
-        }
-      }
-
-      // 3. Platform-specific fallbacks
-      if (isIOS) {
-        // On iOS Safari/Chrome, directly triggering anchor click on blobUrl does not download and may fail.
-        // Opening the blobUrl in a new tab allows Safari to show it and provides native share/save options.
-        console.log('[PDF Download] iOS fallback: Opening Blob URL in a new tab.');
-        window.open(blobUrl, '_blank');
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-      } else {
-        // On Android/Desktop, trigger anchor download with blobUrl
-        console.log('[PDF Download] Triggering standard anchor download with Blob URL.');
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = fileName;
-        a.style.display = 'none';
-        a.target = '_blank';
-        document.body.appendChild(a);
-        a.click();
-        
-        // Clean up
-        setTimeout(() => {
-          document.body.removeChild(a);
-          URL.revokeObjectURL(blobUrl);
-        }, 1000);
-      }
-
-    } catch (error) {
-      console.error('[PDF Download] Download workflow failed. Falling back to direct URL open:', error);
-      // Absolute fallback: open the raw URL in a new tab
-      window.open(rawUrl, '_blank');
-    }
-  };
 
   return (
     <div className={`vendor-profile-wrapper ${themeClass}`} style={wrapperStyles} dir={isAr ? 'rtl' : 'ltr'}>
@@ -399,13 +459,14 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
             src={vendor.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80'}
             alt={vendor.name}
             className="profile-avatar"
+            loading="lazy"
           />
           <div className="verified-icon">
             <Icons.Check size={16} strokeWidth={3} />
           </div>
         </div>
 
-        {/* Name & Job Title — no @username, no empty fallback */}
+        {/* Name & Job Title */}
         <h1 className="profile-name">{vendor.name}</h1>
         {vendor.job_title && vendor.job_title.trim() && (
           <span className="profile-job-title" style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, opacity: 0.8, marginTop: '2px', marginBottom: '12px' }}>
@@ -458,12 +519,10 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
             if (isMulti) {
               return (
                 <div key={tab.id} className="vendor-link-tab vendor-link-tab-multi">
-                  {/* Header row — icon + label only */}
                   <span className="tab-icon">{iconEl}</span>
                   <span className="tab-text">
                     <span style={{ display: 'block', fontWeight: 700, fontSize: '0.95rem' }}>{tab.customLabel || tab.label}</span>
                   </span>
-                  {/* Stacked sub-links */}
                   <div className="vendor-link-tab-subitems">
                     {subValues.map((subVal, idx) => {
                       const subUrl = getTabUrl(tab.type, subVal);
@@ -565,16 +624,18 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
 
       {isPdfModalOpen && (
         isMobile ? (
-          <MobilePdfViewer
-            url={pdfRenderUrl || vendor.portfolioPdfUrl}
-            fileName={vendor.portfolioPdfName}
-            onClose={() => setIsPdfModalOpen(false)}
-            onDownload={() => {
-              const dummyEvent = { preventDefault: () => {} } as React.MouseEvent;
-              handlePdfDownload(dummyEvent);
-            }}
-            isAr={isAr}
-          />
+          <React.Suspense fallback={<div className="pdf-modal-overlay" style={{ color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading PDF Viewer...</div>}>
+            <MobilePdfViewer
+              url={pdfRenderUrl || vendor.portfolioPdfUrl}
+              fileName={vendor.portfolioPdfName}
+              onClose={() => setIsPdfModalOpen(false)}
+              onDownload={() => {
+                const dummyEvent = { preventDefault: () => {} } as React.MouseEvent;
+                handlePdfDownload(dummyEvent);
+              }}
+              isAr={isAr}
+            />
+          </React.Suspense>
         ) : (
           <div className="pdf-modal-overlay" onClick={() => setIsPdfModalOpen(false)}>
             <div className="pdf-modal-content" onClick={(e) => e.stopPropagation()}>

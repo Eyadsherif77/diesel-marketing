@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 export interface Tab {
@@ -66,6 +66,8 @@ interface AppContextType {
   updateOrderStatus: (id: string, status: CardOrder['status']) => void;
   deleteOrder: (id: string) => void;
   approveOrder: (id: string) => Promise<string | null>;
+  loadAllVendors: () => Promise<void>;
+  fetchVendorByUsername: (username: string, forceRefresh?: boolean) => Promise<Vendor | null>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -131,9 +133,13 @@ function vendorToRow(vendor: Vendor) {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [vendorsLoading, setVendorsLoading] = useState(true);
-
+  const [vendorsLoading, setVendorsLoading] = useState(false);
   const [orders, setOrders] = useState<CardOrder[]>([]);
+
+  // Cache of loaded vendor profiles, mapped by lowercased username
+  const [vendorCache, setVendorCache] = useState<Record<string, Vendor>>({});
+  // Keep track of concurrent requests to prevent duplicate Supabase calls
+  const inFlightRequests = useRef<Record<string, Promise<Vendor | null>>>({});
 
   // ── Load orders from Supabase on mount ────────────────────────────────────
   useEffect(() => {
@@ -162,27 +168,94 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadOrders();
   }, []);
 
-  // ── Load vendors from Supabase on mount — NO seeding ──────────────────────
-  useEffect(() => {
-    const loadVendors = async () => {
-      setVendorsLoading(true);
+  // ── Load all vendors (Admin dashboard only) ────────────────────────────────
+  const loadAllVendors = async () => {
+    setVendorsLoading(true);
+    const { data, error } = await supabase
+      .from('vendors')
+      .select('*, companies(subscription_end_date), individual_accounts(subscription_end_date)')
+      .order('created_at', { ascending: true });
 
-      const { data, error } = await supabase
-        .from('vendors')
-        .select('*, companies(subscription_end_date), individual_accounts(subscription_end_date)')
-        .order('created_at', { ascending: true });
+    if (error) {
+      console.error('[Supabase] Failed to load vendors:', error.message);
+    } else if (data) {
+      const loaded = data.map(rowToVendor);
+      setVendors(loaded);
+      // Seed the cache with all loaded vendors to prevent redundant fetches
+      setVendorCache((prev) => {
+        const next = { ...prev };
+        loaded.forEach((v) => {
+          next[v.username.toLowerCase()] = v;
+        });
+        return next;
+      });
+    }
+    setVendorsLoading(false);
+  };
 
-      if (error) {
-        console.error('[Supabase] Failed to load vendors:', error.message);
-      } else {
-        setVendors(data ? data.map(rowToVendor) : []);
+  // ── Fetch single vendor by username (with double-request prevention & caching) ──
+  const fetchVendorByUsername = async (username: string, forceRefresh = false): Promise<Vendor | null> => {
+    const lowerUsername = username.toLowerCase();
+
+    // 1. Check in-memory cache
+    if (!forceRefresh && vendorCache[lowerUsername]) {
+      return vendorCache[lowerUsername];
+    }
+
+    // 2. Check browser sessionStorage caching
+    if (!forceRefresh) {
+      try {
+        const cached = sessionStorage.getItem(`vendor_profile_${lowerUsername}`);
+        if (cached) {
+          const parsed = JSON.parse(cached) as Vendor;
+          setVendorCache((prev) => ({ ...prev, [lowerUsername]: parsed }));
+          return parsed;
+        }
+      } catch (e) {
+        console.error('Failed to parse cached vendor:', e);
       }
+    }
 
-      setVendorsLoading(false);
-    };
+    // 3. Prevent duplicate concurrent requests (return existing promise)
+    if (inFlightRequests.current[lowerUsername] != null) {
+      return inFlightRequests.current[lowerUsername];
+    }
 
-    loadVendors();
-  }, []);
+    const promise = (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('vendors')
+          .select('*, companies(subscription_end_date), individual_accounts(subscription_end_date)')
+          .eq('username', username)
+          .maybeSingle();
+
+        if (error) {
+          console.error('[Supabase] Failed to fetch vendor by username:', error.message);
+          return null;
+        }
+
+        if (data) {
+          const vendor = rowToVendor(data);
+          setVendorCache((prev) => ({ ...prev, [lowerUsername]: vendor }));
+          try {
+            sessionStorage.setItem(`vendor_profile_${lowerUsername}`, JSON.stringify(vendor));
+          } catch (e) {
+            console.error('Failed to save vendor to sessionStorage cache:', e);
+          }
+          return vendor;
+        }
+        return null;
+      } catch (err) {
+        console.error('Fetch error:', err);
+        return null;
+      } finally {
+        delete inFlightRequests.current[lowerUsername];
+      }
+    })();
+
+    inFlightRequests.current[lowerUsername] = promise;
+    return promise;
+  };
 
   // ── Vendor operations ──────────────────────────────────────────────────────
 
@@ -203,7 +276,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false;
     }
 
-    setVendors((prev) => [...prev, rowToVendor(data)]);
+    const newVendor = rowToVendor(data);
+    setVendors((prev) => [...prev, newVendor]);
+    setVendorCache((prev) => ({ ...prev, [newVendor.username.toLowerCase()]: newVendor }));
+    try {
+      sessionStorage.setItem(`vendor_profile_${newVendor.username.toLowerCase()}`, JSON.stringify(newVendor));
+    } catch (e) {
+      console.error('Failed to save vendor to sessionStorage cache:', e);
+    }
     return true;
   };
 
@@ -221,9 +301,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     if (data) {
+      const nextVendor = rowToVendor(data);
       setVendors((prev) =>
-        prev.map((v) => (v.username === username ? rowToVendor(data) : v))
+        prev.map((v) => (v.username === username ? nextVendor : v))
       );
+      setVendorCache((prev) => ({ ...prev, [nextVendor.username.toLowerCase()]: nextVendor }));
+      try {
+        sessionStorage.setItem(`vendor_profile_${nextVendor.username.toLowerCase()}`, JSON.stringify(nextVendor));
+      } catch (e) {
+        console.error('Failed to save vendor to sessionStorage cache:', e);
+      }
     }
   };
 
@@ -239,6 +326,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     setVendors((prev) => prev.filter((v) => v.username !== username));
+    setVendorCache((prev) => {
+      const next = { ...prev };
+      delete next[username.toLowerCase()];
+      return next;
+    });
+    try {
+      sessionStorage.removeItem(`vendor_profile_${username.toLowerCase()}`);
+    } catch (e) {
+      console.error('Failed to remove vendor from sessionStorage cache:', e);
+    }
   };
 
   // ── Order operations (Supabase-backed) ───────────────────────────────────
@@ -416,6 +513,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateOrderStatus,
         deleteOrder,
         approveOrder,
+        loadAllVendors,
+        fetchVendorByUsername,
       }}
     >
       {children}

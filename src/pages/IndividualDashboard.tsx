@@ -66,9 +66,11 @@ const DynIcon = ({ name, size = 20 }: { name: string; size?: number }) => {
 };
 
 export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vendorUsername }) => {
-  const { vendors } = useApp();
+  const { fetchVendorByUsername } = useApp();
   const [session, setSession] = useState<Session | null>(null);
-  
+  const [vendor, setVendor] = useState<import('../context/AppContext').Vendor | null>(null);
+  const [copied, setCopied] = useState(false);
+
   // Split summaries
   const [lifetimeSummary, setLifetimeSummary] = useState<AnalyticsSummary | null>(null);
   const [currentSummary, setCurrentSummary] = useState<AnalyticsSummary | null>(null);
@@ -84,9 +86,11 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
   const [subDaysLeft, setSubDaysLeft] = useState<number | null>(null);
   const [resetTimestamp, setResetTimestamp] = useState<string | undefined>(undefined);
 
-  const vendor = vendors.find(v => v.username.toLowerCase() === vendorUsername.toLowerCase());
+  // Fetch vendor profile lazily so we don't need all vendors in context
+  useEffect(() => {
+    fetchVendorByUsername(vendorUsername).then(setVendor);
+  }, [vendorUsername, fetchVendorByUsername]);
 
-  const [copied, setCopied] = useState(false);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(`https://devtechh.com/#/${vendorUsername}`);

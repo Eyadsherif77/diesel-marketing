@@ -60,9 +60,9 @@ const COMPANY_STATS = [
 ];
 
 export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ companyUsername }) => {
-  const { vendors, vendorsLoading } = useApp();
+  const { fetchVendorByUsername } = useApp();
   const [session, setSession] = useState<Session | null>(null);
-  const [companyVendors, setCompanyVendors] = useState<typeof vendors>([]);
+  const [companyVendors, setCompanyVendors] = useState<import('../context/AppContext').Vendor[]>([]);
   const [summaries, setSummaries] = useState<Record<string, AnalyticsSummary>>({});
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
   const [vendorDaily, setVendorDaily] = useState<DailyPoint[]>([]);
@@ -93,7 +93,7 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
   // NOTE: analytics_reset_at is read from vendors (not companies) because RLS blocks
   // updates to the companies table from the anon key. We store it on all company vendors.
   useEffect(() => {
-    if (!session || vendorsLoading) return;
+    if (!session) return;
     const companyId = session.companyId;
 
     let isMounted = true;
@@ -123,7 +123,9 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
         }
 
         const usernames = (vendorRows ?? []).map((r: { username: string }) => r.username);
-        const myVendors = vendors.filter(v => usernames.includes(v.username));
+        // Fetch each company vendor profile using the cache-aware function
+        const vendorProfiles = await Promise.all(usernames.map((u: string) => fetchVendorByUsername(u)));
+        const myVendors = vendorProfiles.filter(Boolean) as import('../context/AppContext').Vendor[];
 
         // Read analytics_reset_at from first company vendor (all vendors share same reset)
         const resetTs = (vendorRows ?? [])[0]?.analytics_reset_at ?? '';
@@ -146,7 +148,7 @@ export const CompanyDashboard: React.FC<{ companyUsername: string }> = ({ compan
 
     fetchCompanyInfo();
     return () => { isMounted = false; };
-  }, [session, vendors, vendorsLoading]);
+  }, [session, fetchVendorByUsername]);
 
   useEffect(() => {
     if (!session || resetTimestamp === undefined) return;

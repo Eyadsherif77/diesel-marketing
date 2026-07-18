@@ -99,7 +99,8 @@ export const AdminDashboard: React.FC = () => {
     deleteVendor, 
     updateOrderStatus, 
     deleteOrder, 
-    approveOrder 
+    approveOrder,
+    loadAllVendors,
   } = useApp();
 
   // Authentication states
@@ -207,6 +208,13 @@ export const AdminDashboard: React.FC = () => {
     if (activeTab === 'leads') loadLeads();
   }, [activeTab]);
 
+  // Load all vendors when admin is already logged in on mount
+  useEffect(() => {
+    if (isLoggedIn && vendors.length === 0) {
+      loadAllVendors();
+    }
+  }, [isLoggedIn]);
+
   // Notification State
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [simulatedNotification, setSimulatedNotification] = useState<{ phone: string; message: string } | null>(null);
@@ -223,6 +231,8 @@ export const AdminDashboard: React.FC = () => {
     if (loginUser === 'admin' && loginPass === 'admin123') {
       sessionStorage.setItem('devtech_admin_logged', 'true');
       setIsLoggedIn(true);
+      // Load all vendors when admin logs in
+      loadAllVendors();
     } else {
       setLoginError('Invalid username or password credentials.');
     }
@@ -1353,17 +1363,27 @@ export const AdminDashboard: React.FC = () => {
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (file) {
-                                  if (file.size > 2 * 1024 * 1024) {
-                                    triggerAlert('error', 'Image size must be less than 2MB.');
+                                  if (file.size > 5 * 1024 * 1024) {
+                                    triggerAlert('error', 'Image size must be less than 5MB.');
                                     return;
                                   }
-                                  const reader = new FileReader();
-                                  reader.onload = (event) => {
-                                    const base64 = event.target?.result as string;
-                                    setVendorAvatar(base64);
-                                    triggerAlert('success', 'Image uploaded successfully!');
+                                  // Compress image using Canvas before storing
+                                  const img = new Image();
+                                  const objectUrl = URL.createObjectURL(file);
+                                  img.onload = () => {
+                                    const MAX_DIM = 400;
+                                    const scale = Math.min(MAX_DIM / img.width, MAX_DIM / img.height, 1);
+                                    const canvas = document.createElement('canvas');
+                                    canvas.width = Math.round(img.width * scale);
+                                    canvas.height = Math.round(img.height * scale);
+                                    const ctx = canvas.getContext('2d')!;
+                                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                    const compressed = canvas.toDataURL('image/jpeg', 0.80);
+                                    URL.revokeObjectURL(objectUrl);
+                                    setVendorAvatar(compressed);
+                                    triggerAlert('success', 'Image compressed and uploaded successfully!');
                                   };
-                                  reader.readAsDataURL(file);
+                                  img.src = objectUrl;
                                 }
                               }}
                             />
@@ -1450,21 +1470,37 @@ export const AdminDashboard: React.FC = () => {
                               type="file" 
                               accept="application/pdf" 
                               style={{ display: 'none' }}
-                              onChange={(e) => {
+                              onChange={async (e) => {
                                 const file = e.target.files?.[0];
                                 if (file) {
-                                  if (file.size > 5 * 1024 * 1024) {
-                                    triggerAlert('error', 'PDF size must be less than 5MB.');
+                                  if (file.size > 10 * 1024 * 1024) {
+                                    triggerAlert('error', 'PDF size must be less than 10MB.');
                                     return;
                                   }
-                                  const reader = new FileReader();
-                                  reader.onload = (event) => {
-                                    const base64 = event.target?.result as string;
-                                    setVendorPdfUrl(base64);
+                                  triggerAlert('success', 'Uploading PDF to storage…');
+                                  // Try Supabase Storage upload first
+                                  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                                  const storagePath = `portfolios/${Date.now()}_${safeName}`;
+                                  const { data: storageData, error: storageError } = await supabase.storage
+                                    .from('portfolios')
+                                    .upload(storagePath, file, { contentType: 'application/pdf', upsert: true });
+                                  if (!storageError && storageData) {
+                                    const { data: urlData } = supabase.storage.from('portfolios').getPublicUrl(storagePath);
+                                    setVendorPdfUrl(urlData.publicUrl);
                                     setVendorPdfName(file.name);
-                                    triggerAlert('success', 'PDF uploaded successfully!');
-                                  };
-                                  reader.readAsDataURL(file);
+                                    triggerAlert('success', 'PDF uploaded to storage successfully!');
+                                  } else {
+                                    // Fallback: store as Base64 if Storage bucket is not available
+                                    console.warn('[PDF Upload] Storage unavailable, falling back to Base64:', storageError?.message);
+                                    const reader = new FileReader();
+                                    reader.onload = (event) => {
+                                      const base64 = event.target?.result as string;
+                                      setVendorPdfUrl(base64);
+                                      setVendorPdfName(file.name);
+                                      triggerAlert('success', 'PDF saved locally (Storage not configured).');
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }
                                 }
                               }}
                             />

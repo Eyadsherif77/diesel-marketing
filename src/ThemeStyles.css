@@ -11,6 +11,25 @@
   overflow-x: hidden;
 }
 
+/* ─── Skeleton / Shimmer Loading Styles ─────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+
+.skeleton-line {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.12) 40%,
+    rgba(255, 255, 255, 0.04) 80%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+  display: block;
+}
+
+
 /* Background Presets */
 .theme-sunset-glow {
   background: linear-gradient(135deg, #f53f85 0%, #ff7e5f 50%, #feb47b 100%);
