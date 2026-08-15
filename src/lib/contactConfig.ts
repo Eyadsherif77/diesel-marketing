@@ -22,14 +22,14 @@ export const CONTACT = {
   email: 'support@devtechh.com',
 
   /** Primary phone — raw digits for tel: href */
-  phone1: '01063771764',
+  phone1: '',
   /** Primary phone — human-readable display string */
-  phone1Display: '010 6377 1764',
+  phone1Display: '',
 
   /** Secondary phone — raw digits for tel: href */
-  phone2: '01277445066',
+  phone2: '',
   /** Secondary phone — human-readable display string */
-  phone2Display: '012 7744 5066',
+  phone2Display: '',
 
   /** Office location label */
   location: 'Cairo, Egypt',

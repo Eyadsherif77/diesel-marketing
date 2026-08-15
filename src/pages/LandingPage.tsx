@@ -670,34 +670,38 @@ export const LandingPage: React.FC = () => {
                 </div>
 
                 {/* Phone 1 */}
-                <div className="lp-contact-detail">
-                  <div className="lp-contact-detail-icon">
-                    <Icons.Phone size={18} />
+                {CONTACT.phone1 && (
+                  <div className="lp-contact-detail">
+                    <div className="lp-contact-detail-icon">
+                      <Icons.Phone size={18} />
+                    </div>
+                    <a
+                      href={`tel:${CONTACT.phone1}`}
+                      style={{ color: 'inherit', textDecoration: 'none' }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#7660F1')}
+                      onMouseLeave={e => (e.currentTarget.style.color = 'inherit')}
+                    >
+                      {CONTACT.phone1Display}
+                    </a>
                   </div>
-                  <a
-                    href={`tel:${CONTACT.phone1}`}
-                    style={{ color: 'inherit', textDecoration: 'none' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#7660F1')}
-                    onMouseLeave={e => (e.currentTarget.style.color = 'inherit')}
-                  >
-                    {CONTACT.phone1Display}
-                  </a>
-                </div>
+                )}
 
                 {/* Phone 2 */}
-                <div className="lp-contact-detail">
-                  <div className="lp-contact-detail-icon">
-                    <Icons.Phone size={18} />
+                {CONTACT.phone2 && (
+                  <div className="lp-contact-detail">
+                    <div className="lp-contact-detail-icon">
+                      <Icons.Phone size={18} />
+                    </div>
+                    <a
+                      href={`tel:${CONTACT.phone2}`}
+                      style={{ color: 'inherit', textDecoration: 'none' }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#7660F1')}
+                      onMouseLeave={e => (e.currentTarget.style.color = 'inherit')}
+                    >
+                      {CONTACT.phone2Display}
+                    </a>
                   </div>
-                  <a
-                    href={`tel:${CONTACT.phone2}`}
-                    style={{ color: 'inherit', textDecoration: 'none' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#7660F1')}
-                    onMouseLeave={e => (e.currentTarget.style.color = 'inherit')}
-                  >
-                    {CONTACT.phone2Display}
-                  </a>
-                </div>
+                )}
 
                 {/* Location */}
                 <div className="lp-contact-detail">
