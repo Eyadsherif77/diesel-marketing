@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
 export interface Tab {
@@ -169,7 +169,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   // ── Load all vendors (Admin dashboard only) ────────────────────────────────
-  const loadAllVendors = async () => {
+  const loadAllVendors = useCallback(async () => {
     setVendorsLoading(true);
     const { data, error } = await supabase
       .from('vendors')
@@ -191,7 +191,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
     setVendorsLoading(false);
-  };
+  }, []);
 
   // ── Fetch single vendor by username (with double-request prevention & caching) ──
   const fetchVendorByUsername = async (username: string, forceRefresh = false): Promise<Vendor | null> => {

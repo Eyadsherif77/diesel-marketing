@@ -208,12 +208,12 @@ export const AdminDashboard: React.FC = () => {
     if (activeTab === 'leads') loadLeads();
   }, [activeTab]);
 
-  // Load all vendors when admin is already logged in on mount
+  // Load all vendors when admin is already logged in or when vendors tab is active
   useEffect(() => {
-    if (isLoggedIn && vendors.length === 0) {
+    if (isLoggedIn && activeTab === 'vendors') {
       loadAllVendors();
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, activeTab, loadAllVendors]);
 
   // Notification State
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -703,9 +703,27 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               ) : filteredVendors.length === 0 ? (
                 <div className="admin-card" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: 'var(--text-admin-secondary)' }}>
-                  <Icons.UserX size={44} style={{ opacity: 0.5, marginBottom: '1rem' }} />
-                  <h3>No Vendors Match Your Search</h3>
-                  <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>Try refining your spelling query or add a new vendor manually above.</p>
+                  {searchQuery ? (
+                    <>
+                      <Icons.UserX size={44} style={{ opacity: 0.5, marginBottom: '1rem' }} />
+                      <h3>No Vendors Match Your Search</h3>
+                      <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>Try refining your spelling query or add a new vendor manually above.</p>
+                    </>
+                  ) : (
+                    <>
+                      <Icons.AlertCircle size={44} style={{ opacity: 0.5, marginBottom: '1rem', color: '#f59e0b' }} />
+                      <h3>No Vendors Found</h3>
+                      <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', marginBottom: '1.5rem' }}>No vendors are registered in the database, or the database is waking up.</p>
+                      <button 
+                        onClick={() => loadAllVendors()} 
+                        className="admin-btn admin-btn-primary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', margin: '0 auto' }}
+                      >
+                        <Icons.RefreshCw size={16} />
+                        Retry Loading
+                      </button>
+                    </>
+                  )}
                 </div>
               ) : (
                 filteredVendors.map(vendor => (
