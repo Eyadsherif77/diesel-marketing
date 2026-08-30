@@ -58,40 +58,92 @@ const STATS = [
 
 const CLIENTS = [
   {
-    name: 'TechCorp Egypt',
+    name: 'ittsoft',
+    logo: 'Code2',
+    desc: 'Empowered their digital presence by equipping their development and management team with premium NFC business cards.',
+    color: '#7660F1',
+    category: 'tech-media',
+    badge: '2 Cards Active',
+  },
+  {
+    name: 'One Panorama Tours',
+    logo: 'Compass',
+    desc: 'Optimized guest relations and agent contact distribution during high-end tours and events.',
+    color: '#2563EB',
+    category: 'corp-travel',
+  },
+  {
+    name: 'Golden Voyage / Spt tours',
+    logo: 'Anchor',
+    desc: 'Sharing travel itineraries, coordinates, and contact portfolios on the spot with prospective tourists.',
+    color: '#D97706',
+    category: 'corp-travel',
+  },
+  {
+    name: 'Technical Factory for Bolts',
+    nameAr: 'المصنع الفنى لصناعة المسامير',
+    logo: 'Wrench',
+    desc: 'Enabling dynamic product catalog, specifications, and sales team contact sharing at industrial expos.',
+    color: '#4B5563',
+    category: 'industrial',
+  },
+  {
+    name: 'New Avenue',
     logo: 'Building2',
-    desc: 'Deployed 120 NFC cards for their entire sales team — saw a 3× increase in lead conversions.',
-    color: '#7660F1',
-  },
-  {
-    name: 'Gulf Properties',
-    logo: 'Home',
-    desc: 'Real estate agents sharing digital profiles at site visits without printing a single card.',
-    color: '#2563EB',
-  },
-  {
-    name: 'MedHub Clinics',
-    logo: 'Heart',
-    desc: 'Doctors and specialists using DevTech profiles to share credentials and contacts instantly.',
+    desc: 'Equipped property consultants with cards to share property listings and capture buyer details instantly.',
     color: '#06B6D4',
+    category: 'corp-travel',
+    badge: '2 Cards Active',
   },
   {
-    name: 'StartUp Cairo',
-    logo: 'Rocket',
-    desc: 'Startup founders networking at events — one tap and their full deck is in your phone.',
-    color: '#7660F1',
+    name: 'Medmark Egypt',
+    logo: 'HeartPulse',
+    desc: 'Providing medical consultants and insurance brokers a hygienic, touchless method to share provider directories.',
+    color: '#EF4444',
+    category: 'health-fitness',
   },
   {
-    name: 'FinEdge Banking',
-    logo: 'Landmark',
-    desc: 'Relationship managers using verified profiles to build trust before the first meeting.',
-    color: '#2563EB',
+    name: 'Review Advertising',
+    logo: 'Megaphone',
+    desc: 'Linking agency representatives to media packages, design portfolios, and campaign profiles instantly.',
+    color: '#EC4899',
+    category: 'tech-media',
   },
   {
-    name: 'Apex Logistics',
-    logo: 'Truck',
-    desc: 'Operations team sharing contacts and tracking client engagement with live analytics.',
-    color: '#06B6D4',
+    name: 'Tiba Group',
+    logo: 'Layers',
+    desc: 'Consolidating corporate communications and sharing executive profiles during major investment meetings.',
+    color: '#10B981',
+    category: 'corp-travel',
+  },
+  {
+    name: 'ghusnplast',
+    logo: 'Leaf',
+    desc: 'Distributing factory contact profiles and product catalogs to plastic distribution partners and vendors.',
+    color: '#84CC16',
+    category: 'industrial',
+  },
+  {
+    name: 'Modern Sinai for Engineering Industries',
+    nameAr: 'شركة مودرن سيناء للصناعات الهندسية',
+    logo: 'Settings',
+    desc: 'Sharing factory specifications, mechanical layouts, and engineering team contacts with field contractors.',
+    color: '#F97316',
+    category: 'industrial',
+  },
+  {
+    name: 'Athletix Gym',
+    logo: 'Dumbbell',
+    desc: 'Connecting personal trainers and staff members instantly to workout schedules, registrations, and fitness packages.',
+    color: '#F43F5E',
+    category: 'health-fitness',
+  },
+  {
+    name: 'The Engineering Office for Electromechanical Design',
+    logo: 'Zap',
+    desc: 'Sharing blueprints, consulting credentials, and project portfolios directly with developers.',
+    color: '#0284C7',
+    category: 'industrial',
   },
 ];
 
@@ -176,6 +228,7 @@ export const LandingPage: React.FC = () => {
   const [contactSent, setContactSent] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [nfcMenuOpen, setNfcMenuOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('all');
   const heroRef = useRef<HTMLDivElement>(null);
   const nfcRef = useRef<HTMLDivElement>(null);
 
@@ -625,16 +678,43 @@ export const LandingPage: React.FC = () => {
             <div className="lp-section-badge">Our Clients</div>
             <h2 className="lp-section-title">Trusted by Leading Organizations</h2>
             <p className="lp-section-subtitle">
-              From startups to enterprises — DevTech powers professionals across every industry in Egypt and beyond.
+              We help businesses across Egypt elevate their networking and branding with premium NFC solutions.
             </p>
           </div>
+
+          {/* Filtering Tabs */}
+          <div className="lp-clients-tabs">
+            {[
+              { id: 'all', label: 'All Sectors' },
+              { id: 'corp-travel', label: 'Corporate & Travel' },
+              { id: 'industrial', label: 'Industrial & Engineering' },
+              { id: 'tech-media', label: 'Tech & Media' },
+              { id: 'health-fitness', label: 'Health & Fitness' }
+            ].map(cat => (
+              <button
+                key={cat.id}
+                className={`lp-clients-tab ${activeCategory === cat.id ? 'active' : ''}`}
+                onClick={() => setActiveCategory(cat.id)}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
           <div className="lp-clients-grid">
-            {CLIENTS.map((c, i) => (
-              <div key={i} className="lp-client-card">
+            {(activeCategory === 'all' ? CLIENTS : CLIENTS.filter(c => c.category === activeCategory)).map((c, i) => (
+              <div key={`${activeCategory}-${i}`} className="lp-client-card">
                 <div className="lp-client-icon" style={{ background: `${c.color}18`, color: c.color }}>
                   <DynIcon name={c.logo} size={28} />
                 </div>
+                {c.badge && (
+                  <span className="lp-client-badge">
+                    <Icons.Sparkles size={10} />
+                    {c.badge}
+                  </span>
+                )}
                 <h3 className="lp-client-name">{c.name}</h3>
+                {c.nameAr && <div className="lp-client-name-ar">{c.nameAr}</div>}
                 <p className="lp-client-desc">{c.desc}</p>
               </div>
             ))}
