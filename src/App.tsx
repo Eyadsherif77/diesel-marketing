@@ -11,22 +11,61 @@ import { CompanyDashboard } from './pages/CompanyDashboard';
 import './ThemeStyles.css';
 
 const AppRouter: React.FC = () => {
-  const [currentHash, setCurrentHash] = useState(() => window.location.hash);
+  const getResolvedPath = (): string => {
+    // If user explicitly navigated to root via hash (e.g. #/ or #), respect it as home
+    const rawHash = window.location.hash;
+    if (rawHash === '#/' || rawHash === '#') {
+      return '';
+    }
 
-  useEffect(() => {
-    const handleHashChange = () => setCurrentHash(window.location.hash);
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+    // 1. If a meaningful hash exists (e.g. #/admin, #/buy, #/john-doe), use it
+    const cleanHash = rawHash.replace(/^#\/?/, '');
+    if (cleanHash) {
+      const queryIdx = cleanHash.indexOf('?');
+      const hashRoute = queryIdx !== -1 ? cleanHash.substring(0, queryIdx) : cleanHash;
+      if (hashRoute && hashRoute !== 'index.html') {
+        return hashRoute;
+      }
+    }
 
-  // Parse path from hash: "#/john-doe?ref=x" → "john-doe"
-  const getPath = (): string => {
-    const pathWithQuery = currentHash.replace(/^#\/?/, '');
-    const queryIdx = pathWithQuery.indexOf('?');
-    return queryIdx !== -1 ? pathWithQuery.substring(0, queryIdx) : pathWithQuery;
+    // 2. Query parameter: ?u=john-doe or ?vendor=john-doe or ?v=john-doe or ?profile=john-doe
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const userParam =
+        searchParams.get('u') ||
+        searchParams.get('user') ||
+        searchParams.get('vendor') ||
+        searchParams.get('v') ||
+        searchParams.get('profile');
+      if (userParam && userParam.trim()) {
+        return userParam.trim();
+      }
+    } catch {
+      // ignore
+    }
+
+    // 3. Pathname: /john-doe or /admin or /dashboard/alex (ignoring index.html)
+    const pathname = window.location.pathname.replace(/^\/+|\/+$/g, '');
+    if (pathname && pathname !== 'index.html') {
+      return pathname;
+    }
+
+    return '';
   };
 
-  const path = getPath();
+  const [currentPath, setCurrentPath] = useState<string>(getResolvedPath);
+
+  useEffect(() => {
+    const handleLocationChange = () => setCurrentPath(getResolvedPath());
+    window.addEventListener('hashchange', handleLocationChange);
+    window.addEventListener('popstate', handleLocationChange);
+    return () => {
+      window.removeEventListener('hashchange', handleLocationChange);
+      window.removeEventListener('popstate', handleLocationChange);
+    };
+  }, []);
+
+  const path = currentPath;
 
   // ── Route: root or empty hash → Landing Page ──────────────────────────────
   if (!path || path === 'index.html') {

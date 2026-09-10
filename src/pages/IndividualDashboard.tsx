@@ -92,8 +92,11 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
   }, [vendorUsername, fetchVendorByUsername]);
 
 
+  const cleanOrigin = typeof window !== 'undefined' ? window.location.origin.replace(/\/+$/, '') : '';
+  const profileUrl = `${cleanOrigin}/${vendorUsername}`;
+
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(`https://devtechh.com/#/${vendorUsername}`);
+    navigator.clipboard.writeText(profileUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -303,7 +306,7 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
             @{session.username}
           </div>
            {(vendor?.show_profile_url ?? false) && (
-            <a href={`#/${vendorUsername}`} target="_blank" rel="noreferrer"
+            <a href={profileUrl} target="_blank" rel="noreferrer"
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.85rem', background: 'transparent', border: '1px solid #cbd5e1', borderRadius: '50px', color: '#475569', fontSize: '0.85rem', textDecoration: 'none', transition: 'all 0.2s' }}>
               <Icons.ExternalLink size={13} />
               View Profile
@@ -580,7 +583,7 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
                     ))}
                     {(vendor?.show_profile_url ?? false) && (
                       <a
-                        href={`#/${vendorUsername}`}
+                        href={profileUrl}
                         target="_blank"
                         rel="noreferrer"
                         className="submit-btn"
@@ -607,7 +610,7 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
                   <div style={{ padding: '10px', background: '#fff', borderRadius: '12px', display: 'inline-flex', boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>
                     <QRCodeCanvas 
                       id="profile-qr-canvas" 
-                      value={`https://devtechh.com/#/${vendorUsername}?source=qr`} 
+                      value={`${profileUrl}?source=qr`} 
                       size={140} 
                       level="H" 
                       includeMargin={true}
@@ -634,7 +637,7 @@ export const IndividualDashboard: React.FC<{ vendorUsername: string }> = ({ vend
                       <input 
                         type="text" 
                         readOnly 
-                        value={`https://devtechh.com/#/${vendorUsername}`} 
+                        value={profileUrl} 
                         style={{ flexGrow: 1, background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '6px 10px', color: '#475569', fontSize: '0.8rem', outline: 'none' }}
                       />
                       <button 

@@ -16,12 +16,15 @@
 export function generateVCF(vendor: {
   name: string;
   companyName: string;
+  job_title?: string;
   phone_number?: string;
   email?: string;
   website?: string;
   username: string;
 }): void {
-  const profileUrl = `${window.location.origin}${window.location.pathname}#/${vendor.username}`;
+  // Generate clean profile URL without '#' fragment so mobile contact apps and intent handlers don't strip it
+  const cleanOrigin = window.location.origin.replace(/\/+$/, '');
+  const profileUrl = `${cleanOrigin}/${vendor.username}`;
 
   const lines = [
     'BEGIN:VCARD',
@@ -31,16 +34,33 @@ export function generateVCF(vendor: {
     `ORG;CHARSET=UTF-8:${vendor.companyName}`,
   ];
 
+  if (vendor.job_title && vendor.job_title.trim()) {
+    lines.push(`TITLE;CHARSET=UTF-8:${vendor.job_title.trim()}`);
+  }
+
   if (vendor.phone_number) {
     lines.push(`TEL;TYPE=CELL:${vendor.phone_number}`);
   }
   if (vendor.email) {
     lines.push(`EMAIL:${vendor.email}`);
   }
-  if (vendor.website) {
-    lines.push(`URL:${vendor.website}`);
+
+  // Primary Website URL: Must be the digital card profile URL first so mobile contacts apps use it as the main link
+  lines.push(`URL:${profileUrl}`);
+
+  // Secondary Company / External Website (if distinct from profile URL and root)
+  if (vendor.website && vendor.website.trim()) {
+    const cleanWebsite = vendor.website.trim();
+    if (
+      cleanWebsite !== profileUrl &&
+      cleanWebsite !== cleanOrigin &&
+      cleanWebsite !== `${cleanOrigin}/`
+    ) {
+      lines.push(`URL;TYPE=WORK:${cleanWebsite}`);
+    }
   }
-  lines.push(`URL;TYPE=PROFILE;CHARSET=UTF-8:${profileUrl}`);
+
+  lines.push(`NOTE;CHARSET=UTF-8:Digital Business Card: ${profileUrl}`);
   lines.push('END:VCARD');
 
   // vCard spec requires CRLF line endings
@@ -73,9 +93,10 @@ export function generateVCF(vendor: {
 
   const isAndroid = /Android/i.test(navigator.userAgent);
   if (isAndroid) {
-    const notesParts = [];
-    if (vendor.website) notesParts.push(`Website: ${vendor.website}`);
-    notesParts.push(`Profile: ${profileUrl}`);
+    const notesParts = [`Profile: ${profileUrl}`];
+    if (vendor.website && vendor.website.trim() && vendor.website.trim() !== profileUrl) {
+      notesParts.push(`Website: ${vendor.website.trim()}`);
+    }
     const notesStr = notesParts.join('\n');
 
     // Build the android intent URI to open raw_contact insert screen in Contacts app

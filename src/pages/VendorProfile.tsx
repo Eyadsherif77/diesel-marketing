@@ -216,6 +216,7 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ username }) => {
     generateVCF({
       name: vendor.name,
       companyName: vendor.companyName,
+      job_title: vendor.job_title,
       phone_number: vendor.phone_number,
       email: vendor.email,
       website: vendor.website,

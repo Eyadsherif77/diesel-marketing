@@ -44,21 +44,33 @@ export const BuyCard: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Extract referral from hash query parameters e.g., #/buy?ref=john-doe
+  // Extract referral from query parameters or hash e.g., /buy?ref=john-doe or #/buy?ref=john-doe
   useEffect(() => {
-    const handleHashQuery = () => {
+    const handleRefQuery = () => {
+      // 1. Check window.location.search
+      const searchRef = new URLSearchParams(window.location.search).get('ref');
+      if (searchRef) {
+        setReferralVendor(searchRef);
+        return;
+      }
+
+      // 2. Check window.location.hash
       const hash = window.location.hash;
       const queryIdx = hash.indexOf('?');
       if (queryIdx !== -1) {
         const params = new URLSearchParams(hash.substring(queryIdx));
         const ref = params.get('ref') || '';
-        setReferralVendor(ref);
+        if (ref) setReferralVendor(ref);
       }
     };
 
-    handleHashQuery();
-    window.addEventListener('hashchange', handleHashQuery);
-    return () => window.removeEventListener('hashchange', handleHashQuery);
+    handleRefQuery();
+    window.addEventListener('hashchange', handleRefQuery);
+    window.addEventListener('popstate', handleRefQuery);
+    return () => {
+      window.removeEventListener('hashchange', handleRefQuery);
+      window.removeEventListener('popstate', handleRefQuery);
+    };
   }, []);
 
   // Close dropdown on click outside
@@ -239,7 +251,7 @@ export const BuyCard: React.FC = () => {
                 style={{ paddingLeft: '2.1rem' }}
               />
             </div>
-            <p style={{ fontSize: '0.7rem', color: '#4B5563', marginTop: '0.35rem' }}>E.g. devtech.com/#/your-username</p>
+            <p style={{ fontSize: '0.7rem', color: '#4B5563', marginTop: '0.35rem' }}>E.g. devtech.com/your-username</p>
           </div>
 
           <div className="input-group">
