@@ -84,7 +84,18 @@ export function generateVCF(vendor: {
     return;
   }
 
-  // ── Android & Desktop: anchor + Blob URL download ────────────────────────
+  // ── Android: same Blob URL approach — Chrome intercepts text/vcard and
+  //    shows "Open with Contacts" immediately instead of saving to Downloads.
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  if (isAndroid) {
+    const blob = new Blob([vcfContent], { type: 'text/vcard;charset=utf-8' });
+    const blobUrl = URL.createObjectURL(blob);
+    window.location.href = blobUrl;
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+    return;
+  }
+
+  // ── Desktop: anchor + Blob URL download ──────────────────────────────────
   triggerDownload();
 
   function triggerDownload() {
