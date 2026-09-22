@@ -4,11 +4,11 @@
  * Generates a valid vCard 3.0 (.vcf) and triggers a download / contacts-app
  * open on every major mobile browser:
  *
- *   • iPhone Safari      — data: URI approach (createObjectURL is blocked)
- *   • iPhone Chrome      — data: URI approach (WKWebView restriction)
- *   • Android Chrome     — anchor + createObjectURL (works fine)
- *   • Samsung Internet   — anchor + createObjectURL (works fine)
- *   • Desktop browsers   — anchor + createObjectURL
+ *   • iPhone Safari      — Blob URL + window.location.href (iOS 13+ blocks data: URIs entirely)
+ *   • iPhone Chrome      — Blob URL + window.location.href (WKWebView, same restriction)
+ *   • Android Chrome     — anchor + createObjectURL download
+ *   • Samsung Internet   — anchor + createObjectURL download
+ *   • Desktop browsers   — anchor + createObjectURL download
  *
  * The BOM (\uFEFF) has been intentionally removed; it causes some iOS
  * Contacts to display a garbage character at the start of the name.
@@ -67,33 +67,24 @@ export function generateVCF(vendor: {
   const vcfContent = lines.join('\r\n');
   const fileName = `${vendor.name.replace(/\s+/g, '_')}.vcf`;
 
-  // ── Detect iOS (Safari & Chrome on iPhone/iPad use WKWebView,
-  //    which blocks createObjectURL downloads) ──────────────────
+  // ── Detect iOS (Safari & Chrome on iPhone/iPad use WKWebView) ────────────
   const isIOS =
     /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     // iPadOS 13+ reports as Macintosh
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
   if (isIOS) {
-    // iOS Safari blocks programmatic .click() on data: URIs since iOS 13+.
-    // window.location.href is the only reliable trigger — Safari intercepts
-    // the text/vcard MIME type and hands it off to the Contacts app.
-    const dataUri =
-      'data:text/vcard;charset=utf-8,' + encodeURIComponent(vcfContent);
-    window.location.href = dataUri;
+    // iOS Safari 13+ completely blocks navigation to data: URIs.
+    // Blob URLs (blob://) ARE allowed — iOS Safari intercepts the text/vcard
+    // MIME type from the blob URL and opens it directly in the Contacts app.
+    const blob = new Blob([vcfContent], { type: 'text/vcard;charset=utf-8' });
+    const blobUrl = URL.createObjectURL(blob);
+    window.location.href = blobUrl;
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
     return;
   }
 
-  // ── Android: download .vcf directly — all Android browsers handle it
-  //    and the OS prompts the user to open it with the Contacts app.
-  //    The intent:// approach only works in Chrome and is unreliable.
-  const isAndroid = /Android/i.test(navigator.userAgent);
-  if (isAndroid) {
-    triggerDownload();
-    return;
-  }
-
-  // ── All other browsers: Blob + createObjectURL ───────────────
+  // ── Android & Desktop: anchor + Blob URL download ────────────────────────
   triggerDownload();
 
   function triggerDownload() {
