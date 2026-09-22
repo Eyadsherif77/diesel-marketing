@@ -84,26 +84,12 @@ export function generateVCF(vendor: {
     return;
   }
 
+  // ── Android: download .vcf directly — all Android browsers handle it
+  //    and the OS prompts the user to open it with the Contacts app.
+  //    The intent:// approach only works in Chrome and is unreliable.
   const isAndroid = /Android/i.test(navigator.userAgent);
   if (isAndroid) {
-    const notesParts = [`Profile: ${profileUrl}`];
-    if (vendor.website && vendor.website.trim() && vendor.website.trim() !== profileUrl) {
-      notesParts.push(`Website: ${vendor.website.trim()}`);
-    }
-    const notesStr = notesParts.join('\n');
-
-    // Build the android intent URI to open raw_contact insert screen in Contacts app
-    const intentUrl = `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/raw_contact;S.name=${encodeURIComponent(vendor.name)};S.phone=${encodeURIComponent(vendor.phone_number || '')};S.email=${encodeURIComponent(vendor.email || '')};S.company=${encodeURIComponent(vendor.companyName || '')};S.notes=${encodeURIComponent(notesStr)};end`;
-
-    const start = Date.now();
-    window.location.href = intentUrl;
-
-    // Fallback to download if the intent fails to open or is not supported
-    setTimeout(() => {
-      if (Date.now() - start < 1500) {
-        triggerDownload();
-      }
-    }, 800);
+    triggerDownload();
     return;
   }
 
