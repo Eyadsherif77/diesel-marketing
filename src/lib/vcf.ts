@@ -75,19 +75,12 @@ export function generateVCF(vendor: {
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
   if (isIOS) {
-    // data: URI is the only reliable download trigger on iOS WebKit.
-    // The Contacts app registers as a handler for text/vcard.
+    // iOS Safari blocks programmatic .click() on data: URIs since iOS 13+.
+    // window.location.href is the only reliable trigger — Safari intercepts
+    // the text/vcard MIME type and hands it off to the Contacts app.
     const dataUri =
       'data:text/vcard;charset=utf-8,' + encodeURIComponent(vcfContent);
-    const a = document.createElement('a');
-    a.href = dataUri;
-    a.download = fileName;
-    // Some iOS versions need the element to be in the DOM
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    // Small delay before removal so the tap registers
-    setTimeout(() => document.body.removeChild(a), 300);
+    window.location.href = dataUri;
     return;
   }
 
