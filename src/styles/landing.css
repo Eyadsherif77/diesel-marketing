@@ -36,12 +36,12 @@
   50%       { transform: rotate(-1deg) translateY(-14px); }
 }
 @keyframes lpCardFloat1 {
-  0%, 100% { transform: translateY(0) rotate(-3deg); }
-  50%       { transform: translateY(-12px) rotate(-1deg); }
+  0%, 100% { transform: translateY(-58%) rotate(-5deg); }
+  50%       { transform: translateY(calc(-58% - 10px)) rotate(-4deg); }
 }
 @keyframes lpCardFloat2 {
-  0%, 100% { transform: translateY(0) rotate(4deg); }
-  50%       { transform: translateY(-12px) rotate(6deg); }
+  0%, 100% { transform: translateY(-42%) rotate(4deg); }
+  50%       { transform: translateY(calc(-42% - 10px)) rotate(5deg); }
 }
 @keyframes lpCardEntrance {
   from { opacity: 0; transform: translateY(20px); }

@@ -998,20 +998,16 @@ select option {
   100% { background-position: 200% center; }
 }
 
-/* Shimmer button effect on hover */
+/* Submit button styling & smooth hover */
 .submit-btn {
-  background-size: 200% auto;
-  transition: all 0.3s ease, background-position 0.5s ease;
+  transition: all 0.2s ease;
 }
 .submit-btn:hover {
-  background: linear-gradient(135deg, #60A5FA 0%, #2563EB 50%, #1D4ED8 100%);
-  background-size: 200% auto;
-  animation: shimmer 1.5s linear infinite;
-  transform: translateY(-2px);
+  filter: brightness(1.08);
   box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45);
 }
 .submit-btn:active {
-  transform: scale(0.98) translateY(0);
+  transform: scale(0.98);
 }
 
 /* Input field focus lift effect */

@@ -132,7 +132,17 @@ function vendorToRow(vendor: Vendor) {
 }
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>(() => {
+    try {
+      const cached = localStorage.getItem('devtech_cached_vendors');
+      if (cached) {
+        return JSON.parse(cached) as Vendor[];
+      }
+    } catch (e) {
+      console.warn('Failed to parse cached vendors from localStorage:', e);
+    }
+    return [];
+  });
   const [vendorsLoading, setVendorsLoading] = useState(false);
   const [orders, setOrders] = useState<CardOrder[]>([]);
 
@@ -168,30 +178,67 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadOrders();
   }, []);
 
-  // ── Load all vendors (Admin dashboard only) ────────────────────────────────
-  const loadAllVendors = useCallback(async () => {
+  // ── Load all vendors (with auto-retry and persistent caching) ─────────────
+  const loadAllVendors = useCallback(async (retryCount = 0) => {
     setVendorsLoading(true);
-    const { data, error } = await supabase
-      .from('vendors')
-      .select('*, companies(subscription_end_date), individual_accounts(subscription_end_date)')
-      .order('created_at', { ascending: true });
+    try {
+      let { data, error } = await supabase
+        .from('vendors')
+        .select('*, companies(subscription_end_date), individual_accounts(subscription_end_date)')
+        .order('created_at', { ascending: true });
 
-    if (error) {
-      console.error('[Supabase] Failed to load vendors:', error.message);
-    } else if (data) {
-      const loaded = data.map(rowToVendor);
-      setVendors(loaded);
-      // Seed the cache with all loaded vendors to prevent redundant fetches
-      setVendorCache((prev) => {
-        const next = { ...prev };
-        loaded.forEach((v) => {
-          next[v.username.toLowerCase()] = v;
+      // Fallback if relations have a timeout or structural issue
+      if (error) {
+        console.warn(`[Supabase] Attempt ${retryCount + 1}: relation query failed, trying basic select...`, error.message);
+        const fallback = await supabase
+          .from('vendors')
+          .select('*')
+          .order('created_at', { ascending: true });
+        data = fallback.data;
+        error = fallback.error;
+      }
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        const loaded = data.map(rowToVendor);
+        setVendors(loaded);
+        try {
+          localStorage.setItem('devtech_cached_vendors', JSON.stringify(loaded));
+        } catch (e) {
+          console.warn('Failed to save vendors to localStorage:', e);
+        }
+        // Seed cache
+        setVendorCache((prev) => {
+          const next = { ...prev };
+          loaded.forEach((v) => {
+            next[v.username.toLowerCase()] = v;
+          });
+          return next;
         });
-        return next;
-      });
+        setVendorsLoading(false);
+        return;
+      }
+    } catch (err: any) {
+      console.error(`[Supabase] Load vendors attempt ${retryCount + 1} failed:`, err?.message || err);
+      // Auto-retry up to 5 times (helps seamlessly wake up sleeping free-tier Supabase instances)
+      if (retryCount < 5) {
+        const delay = Math.min(1500 * (retryCount + 1), 5000);
+        setTimeout(() => {
+          loadAllVendors(retryCount + 1);
+        }, delay);
+        return;
+      }
     }
     setVendorsLoading(false);
   }, []);
+
+  // Proactively fetch all vendors in the background on initial app mount so data is preloaded
+  useEffect(() => {
+    loadAllVendors();
+  }, [loadAllVendors]);
 
   // ── Fetch single vendor by username (with double-request prevention & caching) ──
   const fetchVendorByUsername = async (username: string, forceRefresh = false): Promise<Vendor | null> => {
