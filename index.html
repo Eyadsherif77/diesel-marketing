@@ -5,11 +5,25 @@
     <link rel="icon" type="image/png" href="/logo.png?v=2" />
     <link rel="apple-touch-icon" href="/logo.png?v=2" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DevTech | Smart NFC Cards & Digital Solutions</title>
-    <meta name="description" content="DevTech — 15+ years delivering NFC smart cards, website design, software development, digital marketing, and graphic design across Egypt." />
-    <meta property="og:title" content="DevTech | Smart NFC Cards & Digital Solutions" />
-    <meta property="og:description" content="Premium NFC business cards with live analytics. Order yours today." />
+    <title>DevTech | Digital Future, Engineered — Smart NFC &amp; Digital Solutions</title>
+    <meta name="description" content="DevTech engineers premium NFC smart business cards, custom software, enterprise ERP, and high-performance websites across Egypt." />
+    <meta property="og:title" content="DevTech | Digital Future, Engineered" />
+    <meta property="og:description" content="Liquid glass aesthetics, premium NFC smart cards, and live analytics dashboards." />
     <meta property="og:image" content="/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('devtech_theme');
+          var isDark = saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) || saved === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var theme = isDark ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-theme', theme);
+          document.documentElement.classList.add(theme);
+        } catch(e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

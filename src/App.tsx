@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AppProvider } from './context/AppContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { VendorProfile } from './pages/VendorProfile';
 import { BuyCard } from './pages/BuyCard';
 import { AdminDashboard } from './pages/AdminDashboard';
@@ -110,9 +111,11 @@ const AppRouter: React.FC = () => {
 
 function App() {
   return (
-    <AppProvider>
-      <AppRouter />
-    </AppProvider>
+    <ThemeProvider>
+      <AppProvider>
+        <AppRouter />
+      </AppProvider>
+    </ThemeProvider>
   );
 }
 

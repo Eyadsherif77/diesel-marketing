@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import * as Icons from 'lucide-react';
 import { loginCompany } from '../lib/auth';
+import { ThemeSwitcher } from '../components/ThemeSwitcher';
 import '../styles/landing.css';
 
 export const CompanyLogin: React.FC = () => {
@@ -36,6 +37,10 @@ export const CompanyLogin: React.FC = () => {
 
   return (
     <div className="auth-page">
+      <div style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', zIndex: 10 }}>
+        <ThemeSwitcher variant="compact" />
+      </div>
+
       <div className="auth-box animate-fade-in">
         <a href="#/" className="auth-back">
           <Icons.ArrowLeft size={14} />
