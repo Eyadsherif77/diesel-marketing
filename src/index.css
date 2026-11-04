@@ -606,55 +606,56 @@ button, input, select, textarea {
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
-  background: #F0F2F5;
+  background: var(--dt-bg);
+  background-image: var(--dt-bg-gradient);
 }
 
 .buy-card-box {
   width: 100%;
   max-width: 480px;
-  background: #FFFFFF;
-  border: 1px solid #E4E6EB;
+  background: var(--dt-surface-elevated);
+  border: 1px solid var(--dt-border);
   border-radius: 28px;
   padding: 2.5rem 2rem;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--dt-card-shadow);
   animation: scaleUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.input-group {
+.buy-card-box .input-group {
   margin-bottom: 1.25rem;
   text-align: left;
 }
 
-.input-label {
+.buy-card-box .input-label {
   display: block;
   font-size: 0.85rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
-  color: #4B5563;
+  color: var(--dt-text-secondary);
 }
 
-.input-field {
+.buy-card-box .input-field {
   width: 100%;
   padding: 0.85rem 1rem;
-  background: #FFFFFF;
-  border: 1px solid #CCD0D5;
+  background: var(--dt-surface);
+  border: 1px solid var(--dt-border);
   border-radius: 12px;
-  color: #1F2937;
+  color: var(--dt-text-primary);
   font-size: 0.95rem;
   outline: none;
   transition: all 0.2s ease;
 }
 
-.input-field:focus {
-  border-color: var(--primary-color);
-  background: #FFFFFF;
-  box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.15);
+.buy-card-box .input-field:focus {
+  border-color: var(--dt-accent-cyan);
+  background: var(--dt-surface-elevated);
+  box-shadow: 0 0 0 3px var(--dt-accent-cyan-glow);
 }
 
-.submit-btn {
+.buy-card-box .submit-btn {
   width: 100%;
   padding: 0.9rem;
-  background: var(--primary-color);
+  background: linear-gradient(135deg, var(--dt-accent-cyan) 0%, var(--dt-accent-violet) 100%);
   color: white;
   border-radius: 12px;
   font-size: 1rem;
@@ -667,10 +668,11 @@ button, input, select, textarea {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  box-shadow: 0 8px 20px var(--dt-accent-cyan-glow);
 }
 
-.submit-btn:hover {
-  background: var(--primary-hover);
+.buy-card-box .submit-btn:hover {
+  filter: brightness(1.1);
   transform: translateY(-1px);
 }
 
