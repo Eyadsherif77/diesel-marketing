@@ -872,11 +872,11 @@ export const LandingPage: React.FC = () => {
                 <Icons.BarChart2 size={14} />
                 <span>Executive Telemetry</span>
               </div>
-              <h2 className="dt-section-title" style={{ fontSize: '2.5rem' }}>
+              <h2 className="dt-section-title lp-analytics-title">
                 Track What Works.<br />
                 <span className="dt-gradient-heading">Optimize Every Interaction.</span>
               </h2>
-              <p style={{ color: 'var(--dt-text-secondary)', lineHeight: 1.7, fontSize: '1.02rem', margin: '1rem 0 1.5rem' }}>
+              <p className="lp-analytics-desc">
                 Access your personal or company CRM dashboard. Gain granular visibility into tap volume, QR scans, contact card downloads, and social click-throughs in real time.
               </p>
 
@@ -969,7 +969,7 @@ export const LandingPage: React.FC = () => {
                 ))}
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--dt-text-muted)' }}>
+              <div className="dt-dash-days">
                 <span>Mon</span>
                 <span>Tue</span>
                 <span>Wed</span>

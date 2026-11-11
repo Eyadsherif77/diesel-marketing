@@ -1806,11 +1806,16 @@
   padding: 120px 2rem;
   position: relative;
   z-index: 5;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .lp-analytics-container {
   max-width: 1320px;
   margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .lp-analytics-glass-card {
@@ -1820,13 +1825,15 @@
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   box-shadow: var(--dt-card-shadow);
-  padding: 4rem;
+  padding: 3.5rem;
   display: grid;
   grid-template-columns: 1fr 1.15fr;
   align-items: center;
-  gap: 4rem;
+  gap: 3.5rem;
   position: relative;
   overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .lp-analytics-glass-card::before {
@@ -1846,6 +1853,32 @@
   flex-direction: column;
   align-items: flex-start;
   z-index: 2;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.lp-analytics-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.2vw, 2.5rem);
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  color: var(--dt-text-primary);
+  word-break: break-word;
+  overflow-wrap: break-word;
+  margin-bottom: 0.75rem;
+  width: 100%;
+}
+
+.lp-analytics-desc {
+  color: var(--dt-text-secondary);
+  line-height: 1.65;
+  font-size: clamp(0.92rem, 1.2vw, 1.02rem);
+  margin: 0.75rem 0 1.5rem;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
 }
 
 .lp-analytics-actions {
@@ -1853,7 +1886,8 @@
   align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
-  margin-top: 2rem;
+  margin-top: 0.5rem;
+  width: 100%;
 }
 
 /* Interactive Dashboard Preview Box */
@@ -1867,6 +1901,10 @@
   flex-direction: column;
   gap: 1.5rem;
   z-index: 2;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .dt-dash-header {
@@ -1875,6 +1913,10 @@
   justify-content: space-between;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--dt-border-subtle);
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .dt-dash-title {
@@ -1885,6 +1927,7 @@
   font-size: 1rem;
   font-weight: 800;
   color: var(--dt-text-primary);
+  min-width: 0;
 }
 
 .dt-dash-time-tabs {
@@ -1894,6 +1937,7 @@
   padding: 3px;
   border-radius: 8px;
   border: 1px solid var(--dt-border);
+  flex-shrink: 0;
 }
 
 .dt-dash-time-tab {
@@ -1906,6 +1950,7 @@
   color: var(--dt-text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .dt-dash-time-tab.active {
@@ -1917,6 +1962,8 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .dt-dash-metric-card {
@@ -1924,6 +1971,8 @@
   border-radius: 12px;
   background: var(--dt-surface-elevated);
   border: 1px solid var(--dt-border-subtle);
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .dt-dash-metric-val {
@@ -1931,11 +1980,15 @@
   font-size: 1.25rem;
   font-weight: 800;
   color: var(--dt-text-primary);
+  word-break: break-all;
 }
 
 .dt-dash-metric-lbl {
   font-size: 0.72rem;
   color: var(--dt-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Activity Chart Bars */
@@ -1946,6 +1999,9 @@
   height: 120px;
   padding: 10px 0;
   border-bottom: 1px solid var(--dt-border-subtle);
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .dt-dash-bar-col {
@@ -1955,6 +2011,7 @@
   align-items: center;
   height: 100%;
   justify-content: flex-end;
+  min-width: 4px;
 }
 
 .dt-dash-bar {
@@ -1967,6 +2024,16 @@
 
 .dt-dash-bar:hover {
   filter: brightness(1.2);
+}
+
+.dt-dash-days {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--dt-text-muted);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* ─── Clients & Portfolio (Section 8) ─────────────────────────── */
@@ -2562,9 +2629,13 @@
   .lp-clients-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .lp-analytics-section {
+    padding: 90px 1.5rem;
+  }
   .lp-analytics-glass-card {
     grid-template-columns: 1fr;
-    padding: 2.5rem;
+    padding: 2.75rem 2rem;
+    gap: 2.75rem;
   }
   .lp-about-container {
     grid-template-columns: 1fr;
@@ -2636,6 +2707,20 @@
   .dt-hero-float-badge {
     display: none;
   }
+  .lp-analytics-section {
+    padding: 70px 1.25rem;
+  }
+  .lp-analytics-glass-card {
+    padding: 2.25rem 1.5rem;
+    gap: 2.25rem;
+    border-radius: 24px;
+  }
+  .lp-analytics-title {
+    font-size: 2rem;
+  }
+  .dt-dash-preview {
+    padding: 1.5rem;
+  }
 }
 
 @media (max-width: 640px) {
@@ -2654,8 +2739,47 @@
   .lp-about-bullets {
     grid-template-columns: 1fr;
   }
+  .lp-analytics-section {
+    padding: 50px 1rem;
+  }
+  .lp-analytics-glass-card {
+    padding: 1.5rem 1rem;
+    border-radius: 20px;
+    gap: 1.75rem;
+  }
+  .lp-analytics-title {
+    font-size: 1.75rem;
+    line-height: 1.22;
+  }
+  .lp-analytics-desc {
+    font-size: 0.94rem;
+    line-height: 1.6;
+    margin: 0.5rem 0 1.25rem;
+  }
+  .lp-analytics-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 0.75rem;
+  }
+  .lp-analytics-actions a {
+    width: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 0.85rem 1.25rem;
+  }
+  .dt-dash-preview {
+    padding: 1.25rem 0.9rem;
+    border-radius: 18px;
+    gap: 1.15rem;
+  }
   .dt-dash-metrics {
     grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .dt-dash-chart {
+    gap: 4px;
+    height: 95px;
   }
   .lp-stats-inner {
     grid-template-columns: 1fr;
@@ -2682,6 +2806,65 @@
   }
   .lp-contact-form-glass {
     padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .lp-analytics-section {
+    padding: 40px 0.75rem;
+  }
+  .lp-analytics-glass-card {
+    padding: 1.25rem 0.85rem;
+    border-radius: 18px;
+    gap: 1.5rem;
+  }
+  .lp-analytics-title {
+    font-size: 1.55rem;
+    line-height: 1.24;
+  }
+  .lp-analytics-desc {
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+  .dt-dash-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .dt-dash-title {
+    font-size: 0.95rem;
+  }
+  .dt-dash-time-tabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    padding: 3px;
+    box-sizing: border-box;
+  }
+  .dt-dash-time-tab {
+    text-align: center;
+    padding: 6px 2px;
+    font-size: 0.72rem;
+  }
+  .dt-dash-metrics {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .dt-dash-metric-card {
+    padding: 10px 8px;
+  }
+  .dt-dash-metric-val {
+    font-size: 1.15rem;
+  }
+  .dt-dash-metric-lbl {
+    font-size: 0.68rem;
+  }
+  .dt-dash-chart {
+    gap: 3px;
+    height: 85px;
+  }
+  .dt-dash-days {
+    font-size: 0.65rem;
   }
 }
 
